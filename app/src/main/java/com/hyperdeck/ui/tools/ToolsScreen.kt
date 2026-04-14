@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
 
 data class ToolItem(
     val id: String,
@@ -85,7 +87,21 @@ fun ToolsScreen(
         }
     }
 
+    val lazyGridState = rememberLazyGridState()
+    val reorderableState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
+        // Only reorder category items (skip accessibility card at index 0 and add card at end)
+        val fromIdx = from.index - 1 // offset for accessibility card
+        val toIdx = to.index - 1
+        val catList = categories.toMutableList()
+        if (fromIdx in catList.indices && toIdx in catList.indices) {
+            val moved = catList.removeAt(fromIdx)
+            catList.add(toIdx, moved)
+            viewModel.reorderCategories(catList)
+        }
+    }
+
     LazyVerticalGrid(
+        state = lazyGridState,
         columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
@@ -94,12 +110,20 @@ fun ToolsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(tools, key = { it.id }) { tool ->
-            ToolCard(
-                tool = tool,
-                onLongClick = if (tool.isDeletable) {
-                    { categoryToDelete = tool.title }
-                } else null
-            )
+            if (tool.isDeletable) {
+                ReorderableItem(reorderableState, key = tool.id) { isDragging ->
+                    ToolCard(
+                        tool = tool,
+                        onLongClick = { categoryToDelete = tool.title },
+                        modifier = Modifier.longPressDraggableHandle()
+                    )
+                }
+            } else {
+                ToolCard(
+                    tool = tool,
+                    onLongClick = null
+                )
+            }
         }
 
         item(key = "add_category") {
@@ -133,10 +157,11 @@ fun ToolsScreen(
 @Composable
 private fun ToolCard(
     tool: ToolItem,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     ElevatedCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(120.dp)
             .combinedClickable(

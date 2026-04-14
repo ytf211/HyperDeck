@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.ToggleOn
@@ -59,6 +61,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
 import com.hyperdeck.data.model.SettingsItem
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun SystemSettingsScreen(
@@ -74,6 +78,25 @@ fun SystemSettingsScreen(
         viewModel.loadForCategory(categoryFilter)
     }
 
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        // Find which category the items belong to and reorder
+        val currentItems = categories.flatMap { it.items }
+        if (from.index < currentItems.size && to.index < currentItems.size) {
+            categories.firstOrNull()?.let { cat ->
+                val mutable = cat.items.toMutableList()
+                // Adjust indices for category header items
+                val fromIdx = from.index - 1 // account for category header
+                val toIdx = to.index - 1
+                if (fromIdx in mutable.indices && toIdx in mutable.indices) {
+                    val moved = mutable.removeAt(fromIdx)
+                    mutable.add(toIdx, moved)
+                    viewModel.reorderItems(cat.category, mutable)
+                }
+            }
+        }
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -82,6 +105,7 @@ fun SystemSettingsScreen(
         }
     ) { innerPadding ->
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -89,7 +113,7 @@ fun SystemSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             categories.forEach { category ->
-                item {
+                item(key = "header_${category.category}") {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         category.category,
@@ -98,12 +122,16 @@ fun SystemSettingsScreen(
                     )
                 }
                 items(category.items, key = { "${category.category}:${it.title}" }) { item ->
-                    SettingsItemCard(
-                        item = item,
-                        viewModel = viewModel,
-                        onEdit = { editingItem = item },
-                        onDelete = { deletingItem = item }
-                    )
+                    ReorderableItem(reorderableLazyListState, key = "${category.category}:${item.title}") { isDragging ->
+                        SettingsItemCard(
+                            item = item,
+                            viewModel = viewModel,
+                            onEdit = { editingItem = item },
+                            onDelete = { deletingItem = item },
+                            dragModifier = Modifier.draggableHandle()
+                        )
+                    }
+                }
                 }
             }
         }
@@ -160,7 +188,8 @@ private fun SettingsItemCard(
     item: SettingsItem,
     viewModel: SystemSettingsViewModel,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    dragModifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -203,6 +232,12 @@ private fun SettingsItemCard(
                         )
                     }
                 }
+                Icon(
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = dragModifier.size(20.dp)
+                )
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
