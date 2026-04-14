@@ -32,6 +32,9 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --parallel --build-cache --configuration-cache
 
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --parallel --build-cache --configuration-cache
+
       - name: Get version
         id: version
         run: |
@@ -39,11 +42,31 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Upload APK artifact
+      - name: Rename APKs
+        run: |
+          cd app/build/outputs/apk
+          # Debug
+          for f in debug/*.apk; do
+            name=$(basename "$f" .apk)
+            mv "$f" "debug/HyperDeck-${{ steps.version.outputs.version }}-debug-${name##*-}.apk" 2>/dev/null || true
+          done
+          # Release by ABI
+          for f in release/*.apk; do
+            name=$(basename "$f" .apk)
+            mv "$f" "release/HyperDeck-${{ steps.version.outputs.version }}-release-${name##*-}.apk" 2>/dev/null || true
+          done
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: HyperDeck-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: HyperDeck-release
+          path: app/build/outputs/apk/release/*.apk
 
       - name: Create Release
         if: ${{ inputs.release }}
@@ -51,5 +74,28 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: HyperDeck ${{ steps.version.outputs.tag }}
-          files: app/build/outputs/apk/debug/*.apk
-          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
+          body: |
+            ## HyperDeck ${{ steps.version.outputs.tag }}
+
+            Android 系统管理工具，基于 Shizuku 提供 ADB/Root 级别的系统操控能力。
+
+            ### 主要功能
+            - **系统设置管理** — JSON 驱动的分类设置面板，支持开关/滑块/选择/输入控件
+            - **Shell 终端** — 内置命令行，支持命令历史、取消、快捷命令
+            - **无障碍服务管理** — 一键开关任意无障碍服务
+            - **配置导入导出** — 分享和导入 system_settings.json
+            - **自定义分类** — 自由添加/删除/排序工具卡片和设置项
+            - **主题切换** — 跟随系统 / 浅色 / 深色 三选一
+
+            ### 下载说明
+            | 文件 | 说明 |
+            |------|------|
+            | `*-arm64-v8a.apk` | 64位 ARM 设备 (大多数现代手机) |
+            | `*-armeabi-v7a.apk` | 32位 ARM 设备 |
+            | `*-x86_64.apk` | x86_64 模拟器/设备 |
+            | `*-universal.apk` | 通用版 (体积较大，兼容所有架构) |
+
+            > 需要安装 [Shizuku](https://github.com/RikkaApps/Shizuku) 才能使用完整功能。

@@ -1,7 +1,8 @@
 package com.hyperdeck.ui.tools
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
 
+@Immutable
 data class ToolItem(
     val id: String,
     val title: String,
@@ -163,22 +167,27 @@ fun ToolsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ToolCard(
     tool: ToolItem,
     onLongClick: (() -> Unit)? = null
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Card(
-        onClick = tool.onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(120.dp)
-            .then(
-                if (onLongClick != null) {
-                    Modifier.pointerInput(Unit) {
-                        detectTapGestures(onLongPress = { onLongClick() })
+            .clip(RoundedCornerShape(20.dp))
+            .combinedClickable(
+                onClick = tool.onClick,
+                onLongClick = if (onLongClick != null) {
+                    {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
                     }
-                } else Modifier
+                } else null
             ),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
