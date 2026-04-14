@@ -9,10 +9,6 @@ android {
     namespace = "com.hyperdeck"
     compileSdk = 36
 
-    androidResources {
-        additionalParameters += listOf("--allow-reserved-package-id", "--no-version-vectors")
-    }
-
     defaultConfig {
         applicationId = "com.hyperdeck"
         minSdk = 26
