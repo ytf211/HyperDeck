@@ -78,6 +78,24 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
         }
     }
 
+    // Save while preserving categories not shown on this screen
+    val saveCategories: () -> Unit = {
+        if (categoryFilter == null) {
+            SettingsConfigParser.saveToInternal(context, categories.toList())
+        } else {
+            val all = SettingsConfigParser.loadFromInternal(context).toMutableList()
+            val idx = all.indexOfFirst { it.category == categoryFilter }
+            if (categories.isNotEmpty() && idx >= 0) {
+                all[idx] = categories[0]
+            } else if (categories.isEmpty() && idx >= 0) {
+                all.removeAt(idx)
+            } else if (categories.isNotEmpty() && idx < 0) {
+                all.addAll(categories)
+            }
+            SettingsConfigParser.saveToInternal(context, all)
+        }
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -127,7 +145,7 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                         val newItems = cat.items.toMutableList()
                         newItems[itemIdx] = updated
                         categories[catIdx] = cat.copy(items = newItems)
-                        SettingsConfigParser.saveToInternal(context, categories)
+                        saveCategories()
                     }
                 }
                 editingItem = null
@@ -152,7 +170,7 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                         } else {
                             categories[catIdx] = cat.copy(items = newItems)
                         }
-                        SettingsConfigParser.saveToInternal(context, categories)
+                        saveCategories()
                     }
                     deletingItem = null
                 }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error) }
@@ -173,7 +191,7 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                 } else {
                     categories.add(SettingsCategory("Custom", listOf(newItem)))
                 }
-                SettingsConfigParser.saveToInternal(context, categories)
+                saveCategories()
                 showAddDialog = false
             }
         )
