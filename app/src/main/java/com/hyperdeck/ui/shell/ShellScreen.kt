@@ -52,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -167,19 +168,23 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                         }
                     }
                     items(entries) { entry ->
-                        Text(
-                            "$ ${entry.command}",
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            entry.output,
-                            color = if (entry.isError) MaterialTheme.colorScheme.error else terminalTextColor,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp
-                        )
+                        SelectionContainer {
+                            Column {
+                                Text(
+                                    "$ ${entry.command}",
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 13.sp
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    entry.output,
+                                    color = if (entry.isError) MaterialTheme.colorScheme.error else terminalTextColor,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
                         Spacer(Modifier.height(8.dp))
                         HorizontalDivider(
                             color = terminalTextColor.copy(alpha = 0.15f)

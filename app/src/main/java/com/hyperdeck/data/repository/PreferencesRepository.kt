@@ -23,13 +23,7 @@ class PreferencesRepository(private val context: Context) {
 
         private val json = Json { ignoreUnknownKeys = true }
 
-        private fun defaultQuickCommands(): List<QuickCommand> = listOf(
-            QuickCommand("1", "getprop", "getprop ro.build.display.id", 0),
-            QuickCommand("2", "battery", "dumpsys battery", 1),
-            QuickCommand("3", "wm size", "wm size", 2),
-            QuickCommand("4", "wm density", "wm density", 3),
-            QuickCommand("5", "meminfo", "cat /proc/meminfo | head -5", 4),
-        )
+        private fun defaultQuickCommands(): List<QuickCommand> = emptyList()
     }
 
     // Dark mode: null = follow system, true = dark, false = light

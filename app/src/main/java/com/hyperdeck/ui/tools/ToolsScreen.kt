@@ -1,30 +1,54 @@
 package com.hyperdeck.ui.tools
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.material.icons.outlined.BrightnessHigh
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyGridState
 
 data class ToolItem(
     val id: String,
@@ -48,7 +72,6 @@ private fun categoryIcon(name: String): ImageVector = when {
     else -> Icons.Outlined.Settings
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ToolsScreen(
     onNavigateToAccessibility: () -> Unit,
@@ -87,47 +110,34 @@ fun ToolsScreen(
         }
     }
 
-    val lazyGridState = rememberLazyGridState()
-    val reorderableState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
-        // Only reorder category items (skip accessibility card at index 0 and add card at end)
-        val fromIdx = from.index - 1 // offset for accessibility card
-        val toIdx = to.index - 1
-        val catList = categories.toMutableList()
-        if (fromIdx in catList.indices && toIdx in catList.indices) {
-            val moved = catList.removeAt(fromIdx)
-            catList.add(toIdx, moved)
-            viewModel.reorderCategories(catList)
-        }
-    }
-
-    LazyVerticalGrid(
-        state = lazyGridState,
-        columns = GridCells.Fixed(2),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(tools, key = { it.id }) { tool ->
-            if (tool.isDeletable) {
-                ReorderableItem(reorderableState, key = tool.id) { isDragging ->
-                    ToolCard(
-                        tool = tool,
-                        onLongClick = { categoryToDelete = tool.title },
-                        modifier = Modifier.longPressDraggableHandle()
-                    )
-                }
-            } else {
-                ToolCard(
-                    tool = tool,
-                    onLongClick = null
-                )
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_category))
             }
         }
-
-        item(key = "add_category") {
-            AddCategoryCard(onClick = { showAddDialog = true })
+    ) { innerPadding ->
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(tools, key = { it.id }) { tool ->
+                ToolCard(
+                    tool = tool,
+                    onLongClick = if (tool.isDeletable) {
+                        { categoryToDelete = tool.title }
+                    } else null
+                )
+            }
         }
     }
 
@@ -153,20 +163,22 @@ fun ToolsScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ToolCard(
     tool: ToolItem,
-    onLongClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onLongClick: (() -> Unit)? = null
 ) {
     ElevatedCard(
-        modifier = modifier
+        onClick = tool.onClick,
+        modifier = Modifier
             .fillMaxWidth()
             .height(120.dp)
-            .combinedClickable(
-                onClick = tool.onClick,
-                onLongClick = onLongClick
+            .then(
+                if (onLongClick != null) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(onLongPress = { onLongClick() })
+                    }
+                } else Modifier
             ),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
@@ -206,34 +218,6 @@ private fun ToolCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun AddCategoryCard(onClick: () -> Unit) {
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .combinedClickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.Add,
-                contentDescription = stringResource(R.string.add_category),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(32.dp)
-            )
         }
     }
 }
