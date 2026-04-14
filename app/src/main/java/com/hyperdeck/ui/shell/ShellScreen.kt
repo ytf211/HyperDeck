@@ -64,7 +64,6 @@ fun ShellScreen() {
         "DPI" to "wm density",
         stringResource(R.string.system_version) to "getprop ro.build.display.id"
     )
-    }
 
     fun executeCommand(cmd: String) {
         if (cmd.isBlank()) return
