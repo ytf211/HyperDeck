@@ -1,0 +1,117 @@
+package com.hyperdeck.ui.tools
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+
+data class ToolItem(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val accentColor: Color,
+    val onClick: () -> Unit
+)
+
+@Composable
+fun ToolsScreen(
+    onNavigateToAccessibility: () -> Unit,
+    onNavigateToSystemSettings: () -> Unit
+) {
+    val tools = listOf(
+        ToolItem(
+            id = "accessibility",
+            title = "无障碍管理",
+            description = "管理无障碍服务开关",
+            icon = Icons.Default.Accessibility,
+            accentColor = Color(0xFF4CAF50),
+            onClick = onNavigateToAccessibility
+        ),
+        ToolItem(
+            id = "system_settings",
+            title = "系统设置",
+            description = "修改系统配置项",
+            icon = Icons.Default.Tune,
+            accentColor = Color(0xFF2196F3),
+            onClick = onNavigateToSystemSettings
+        )
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(tools, key = { it.id }) { tool ->
+            ToolCard(tool)
+        }
+    }
+}
+
+@Composable
+private fun ToolCard(tool: ToolItem) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = tool.onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        border = BorderStroke(2.dp, tool.accentColor.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    tool.icon,
+                    contentDescription = null,
+                    tint = tool.accentColor,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    tool.title,
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                tool.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}

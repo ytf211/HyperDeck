@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HyperDeck</string>
+    <string name="tab_tools">工具</string>
+    <string name="tab_shell">Shell</string>
+    <string name="tab_settings">设置</string>
+    <string name="shizuku_connected">Shizuku 已连接</string>
+    <string name="shizuku_disconnected">Shizuku 未连接</string>
+    <string name="shizuku_not_installed">Shizuku 未安装</string>
+    <string name="accessibility_management">无障碍管理</string>
+    <string name="system_settings">系统设置</string>
+    <string name="shell_input_hint">输入命令…</string>
+    <string name="send">发送</string>
+    <string name="search_hint">搜索…</string>
+    <string name="all">全部</string>
+    <string name="running">运行中</string>
+    <string name="stopped">已停止</string>
+    <string name="dark_mode">深色模式</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="reconnect">重新连接</string>
+    <string name="add_setting">添加设置项</string>
+    <string name="edit">编辑</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="title">标题</string>
+    <string name="description">描述</string>
+    <string name="command">命令</string>
+    <string name="quick_commands">快捷命令</string>
+    <string name="connection_status">连接状态</string>
+    <string name="run_mode">运行模式</string>
+    <string name="api_version">API 版本</string>
+    <string name="app_settings">应用设置</string>
+    <string name="shizuku_config">Shizuku 配置</string>
+</resources>

@@ -1,0 +1,80 @@
+[
+  {
+    "category": "性能优化",
+    "items": [
+      {
+        "title": "窗口动画缩放",
+        "description": "控制窗口动画时长倍数",
+        "type": "slider",
+        "command": "settings put global window_animation_scale {value}",
+        "check_command": "settings get global window_animation_scale",
+        "min": 0,
+        "max": 2,
+        "step": 0.25
+      },
+      {
+        "title": "过渡动画缩放",
+        "description": "控制过渡动画时长倍数",
+        "type": "slider",
+        "command": "settings put global transition_animation_scale {value}",
+        "check_command": "settings get global transition_animation_scale",
+        "min": 0,
+        "max": 2,
+        "step": 0.25
+      },
+      {
+        "title": "动画程序时长缩放",
+        "description": "控制动画程序时长倍数",
+        "type": "slider",
+        "command": "settings put global animator_duration_scale {value}",
+        "check_command": "settings get global animator_duration_scale",
+        "min": 0,
+        "max": 2,
+        "step": 0.25
+      }
+    ]
+  },
+  {
+    "category": "显示",
+    "items": [
+      {
+        "title": "屏幕亮度",
+        "description": "手动设置屏幕亮度 (0-255)",
+        "type": "slider",
+        "command": "settings put system screen_brightness {value}",
+        "check_command": "settings get system screen_brightness",
+        "min": 0,
+        "max": 255,
+        "step": 1
+      },
+      {
+        "title": "屏幕超时",
+        "description": "自动息屏时间 (毫秒)",
+        "type": "input",
+        "command": "settings put system screen_off_timeout {value}",
+        "check_command": "settings get system screen_off_timeout"
+      }
+    ]
+  },
+  {
+    "category": "开发者选项",
+    "items": [
+      {
+        "title": "USB 调试",
+        "description": "启用/禁用 USB 调试",
+        "type": "toggle",
+        "command_on": "settings put global adb_enabled 1",
+        "command_off": "settings put global adb_enabled 0",
+        "check_command": "settings get global adb_enabled"
+      },
+      {
+        "title": "保持唤醒",
+        "description": "充电时保持屏幕常亮",
+        "type": "toggle",
+        "command_on": "settings put global stay_on_while_plugged_in 3",
+        "command_off": "settings put global stay_on_while_plugged_in 0",
+        "check_command": "settings get global stay_on_while_plugged_in"
+      }
+    ]
+  }
+]
