@@ -85,6 +85,7 @@ class ShizukuManager(private val packageName: String) {
         .version(1)
 
     fun addListeners() {
+        log("addListeners: available=${isShizukuAvailable()}, permission=${hasPermission()}")
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
         Shizuku.addRequestPermissionResultListener(permissionResultListener)

@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.hyperdeck.R
@@ -49,6 +50,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AccessibilityScreen(shizukuManager: ShizukuManager) {
+    val context = LocalContext.current
+    val pm = context.packageManager
     val scope = rememberCoroutineScope()
     val services = remember { mutableStateListOf<AccessibilityServiceInfo>() }
     var searchQuery by remember { mutableStateOf("") }
@@ -96,11 +99,12 @@ fun AccessibilityScreen(shizukuManager: ShizukuManager) {
                     val pkg = parts[0]
                     val svcClass = parts[1]
                     val fullComponent = "$pkg/$svcClass"
-                    val labelResult = CommandExecutor.execute(
-                        "pm resolve-activity --brief $pkg 2>/dev/null | tail -1"
-                    )
-                    val label = labelResult.output.takeIf { it.isNotBlank() && !it.contains("/") }
-                        ?: pkg.substringAfterLast(".")
+                    val label = try {
+                        val appInfo = pm.getApplicationInfo(pkg, 0)
+                        pm.getApplicationLabel(appInfo).toString()
+                    } catch (_: Exception) {
+                        pkg.substringAfterLast(".")
+                    }
                     services.add(
                         AccessibilityServiceInfo(
                             label = label,

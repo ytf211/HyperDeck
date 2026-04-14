@@ -78,6 +78,7 @@
     <string name="log_clear">清空日志</string>
     <string name="log_empty">暂无日志</string>
     <string name="log_exported">日志已导出</string>
+    <string name="auto_scroll">自动滚动</string>
     <string name="log_auto_scroll">自动滚动</string>
     <string name="log_share">分享</string>
     <string name="log_copy_all">复制全部</string>

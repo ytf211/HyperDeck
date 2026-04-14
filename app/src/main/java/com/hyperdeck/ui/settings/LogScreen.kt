@@ -152,7 +152,8 @@ fun LogScreen() {
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(8.dp)),
                 verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
-                items(filteredEntries, key = { "${it.timestamp}_${it.message.hashCode()}" }) { entry ->
+                items(filteredEntries.size) { index ->
+                    val entry = filteredEntries[index]
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)) {
                         Text(
                             dateFormat.format(Date(entry.timestamp)),

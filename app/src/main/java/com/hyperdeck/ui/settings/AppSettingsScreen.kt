@@ -144,7 +144,7 @@ fun AppSettingsScreen(shizukuManager: ShizukuManager, onNavigateToLog: () -> Uni
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                InfoRow(stringResource(R.string.version), "0.2.3")
+                InfoRow(stringResource(R.string.version), "0.2.4")
                 Spacer(Modifier.height(8.dp))
                 InfoRow(stringResource(R.string.package_name), "com.hyperdeck")
             }

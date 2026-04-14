@@ -65,6 +65,7 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
     val scope = rememberCoroutineScope()
     val categories = remember { mutableStateListOf<SettingsCategory>() }
     var editingItem by remember { mutableStateOf<SettingsItem?>(null) }
+    var deletingItem by remember { mutableStateOf<SettingsItem?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -104,19 +105,7 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                     SettingsItemCard(
                         item = item,
                         onLongClick = { editingItem = item },
-                        onDelete = {
-                            val catIdx = categories.indexOfFirst { cat -> cat.items.contains(item) }
-                            if (catIdx >= 0) {
-                                val cat = categories[catIdx]
-                                val newItems = cat.items.filter { it != item }
-                                if (newItems.isEmpty()) {
-                                    categories.removeAt(catIdx)
-                                } else {
-                                    categories[catIdx] = cat.copy(items = newItems)
-                                }
-                                SettingsConfigParser.saveToInternal(context, categories)
-                            }
-                        }
+                        onDelete = { deletingItem = item }
                     )
                 }
             }
@@ -142,6 +131,34 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                     }
                 }
                 editingItem = null
+            }
+        )
+    }
+
+    if (deletingItem != null) {
+        AlertDialog(
+            onDismissRequest = { deletingItem = null },
+            title = { Text(stringResource(R.string.delete)) },
+            text = { Text("${deletingItem!!.title}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val item = deletingItem!!
+                    val catIdx = categories.indexOfFirst { cat -> cat.items.contains(item) }
+                    if (catIdx >= 0) {
+                        val cat = categories[catIdx]
+                        val newItems = cat.items.filter { it != item }
+                        if (newItems.isEmpty()) {
+                            categories.removeAt(catIdx)
+                        } else {
+                            categories[catIdx] = cat.copy(items = newItems)
+                        }
+                        SettingsConfigParser.saveToInternal(context, categories)
+                    }
+                    deletingItem = null
+                }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingItem = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -422,6 +439,7 @@ private fun EditSettingsDialog(
     var commandOn by remember { mutableStateOf(item.command_on) }
     var commandOff by remember { mutableStateOf(item.command_off) }
     var command by remember { mutableStateOf(item.command) }
+    var checkCommand by remember { mutableStateOf(item.check_command) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -436,15 +454,16 @@ private fun EditSettingsDialog(
                 } else {
                     OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text(stringResource(R.string.command_label)) })
                 }
+                OutlinedTextField(value = checkCommand, onValueChange = { checkCommand = it }, label = { Text(stringResource(R.string.check_command)) })
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(item.copy(title = title, description = description, command_on = commandOn, command_off = commandOff, command = command))
+                onSave(item.copy(title = title, description = description, command_on = commandOn, command_off = commandOff, command = command, check_command = checkCommand))
             }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
