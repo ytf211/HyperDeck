@@ -1,5 +1,10 @@
 package com.hyperdeck.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
@@ -133,10 +138,18 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
             navController = navController,
             startDestination = ToolsRoute,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = { slideInHorizontally { it } },
-            exitTransition = { slideOutHorizontally { -it } },
-            popEnterTransition = { slideInHorizontally { -it } },
-            popExitTransition = { slideOutHorizontally { it } }
+            enterTransition = {
+                fadeIn(tween(300)) + slideInHorizontally(tween(300)) { it / 4 }
+            },
+            exitTransition = {
+                fadeOut(tween(250)) + scaleOut(tween(250), targetScale = 0.95f)
+            },
+            popEnterTransition = {
+                fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.95f)
+            },
+            popExitTransition = {
+                fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { it / 4 }
+            }
         ) {
             composable<ToolsRoute> {
                 ToolsScreen(

@@ -19,7 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -74,16 +76,24 @@ fun LogScreen() {
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!enabled) LogRepository.setEnabled(true)
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Log enable/disable toggle
+            IconToggleButton(
+                checked = enabled,
+                onCheckedChange = { LogRepository.setEnabled(it) }
+            ) {
+                Icon(
+                    if (enabled) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    contentDescription = stringResource(R.string.log_enabled),
+                    tint = if (enabled) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(onClick = { showLevelMenu = true }) {
                 Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.log_level))
             }

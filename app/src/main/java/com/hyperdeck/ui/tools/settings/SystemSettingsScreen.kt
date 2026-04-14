@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.ToggleOn
@@ -80,19 +79,15 @@ fun SystemSettingsScreen(
 
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        // Find which category the items belong to and reorder
-        val currentItems = categories.flatMap { it.items }
-        if (from.index < currentItems.size && to.index < currentItems.size) {
-            categories.firstOrNull()?.let { cat ->
-                val mutable = cat.items.toMutableList()
-                // Adjust indices for category header items
-                val fromIdx = from.index - 1 // account for category header
-                val toIdx = to.index - 1
-                if (fromIdx in mutable.indices && toIdx in mutable.indices) {
-                    val moved = mutable.removeAt(fromIdx)
-                    mutable.add(toIdx, moved)
-                    viewModel.reorderItems(cat.category, mutable)
-                }
+        categories.firstOrNull()?.let { cat ->
+            val mutable = cat.items.toMutableList()
+            val headerOffset = 1 // one header item before the list items
+            val fromIdx = from.index - headerOffset
+            val toIdx = to.index - headerOffset
+            if (fromIdx in mutable.indices && toIdx in mutable.indices) {
+                val moved = mutable.removeAt(fromIdx)
+                mutable.add(toIdx, moved)
+                viewModel.reorderItems(cat.category, mutable)
             }
         }
     }
@@ -128,7 +123,7 @@ fun SystemSettingsScreen(
                             viewModel = viewModel,
                             onEdit = { editingItem = item },
                             onDelete = { deletingItem = item },
-                            dragModifier = Modifier.draggableHandle()
+                            modifier = Modifier.longPressDraggableHandle()
                         )
                     }
                 }
@@ -188,7 +183,7 @@ private fun SettingsItemCard(
     viewModel: SystemSettingsViewModel,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    dragModifier: Modifier = Modifier
+    modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -201,7 +196,7 @@ private fun SettingsItemCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
@@ -231,12 +226,6 @@ private fun SettingsItemCard(
                         )
                     }
                 }
-                Icon(
-                    imageVector = Icons.Default.DragHandle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = dragModifier.size(20.dp)
-                )
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(

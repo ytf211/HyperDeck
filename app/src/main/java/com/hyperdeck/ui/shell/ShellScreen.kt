@@ -74,9 +74,10 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
     val quickCommands by viewModel.quickCommands.collectAsStateWithLifecycle()
     val autoScroll by viewModel.autoScroll.collectAsStateWithLifecycle()
 
-    // Terminal always uses dark theme for best readability
-    val terminalBackground = Color(0xFF1A1B1E)
-    val terminalTextColor = Color(0xFFD4D4D4)
+    // Terminal: warm dark background, soft contrast text
+    val terminalBackground = Color(0xFF1E2028)
+    val terminalTextColor = Color(0xFFBFC7D5)
+    val terminalCmdColor = Color(0xFF82AAFF)
 
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -168,7 +169,7 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                             Column {
                                 Text(
                                     "$ ${entry.command}",
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                    color = terminalCmdColor,
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 13.sp
                                 )
