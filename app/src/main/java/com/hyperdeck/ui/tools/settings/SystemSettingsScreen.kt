@@ -136,7 +136,7 @@ fun SystemSettingsScreen() {
                     val cat = categories[0]
                     categories[0] = cat.copy(items = cat.items + newItem)
                 } else {
-                    categories.add(SettingsCategory("自定义", listOf(newItem)))
+                    categories.add(SettingsCategory("Custom", listOf(newItem)))
                 }
                 SettingsConfigParser.saveToInternal(context, categories)
                 showAddDialog = false
