@@ -34,7 +34,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.hyperdeck.R
 import com.hyperdeck.data.model.AccessibilityServiceInfo
 import com.hyperdeck.shizuku.CommandExecutor
 import com.hyperdeck.ui.theme.AccessibilityRunning
@@ -142,8 +144,8 @@ fun AccessibilityScreen() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            StatCard("运行中", runningCount.toString(), AccessibilityRunning, Modifier.weight(1f))
-            StatCard("已安装", totalCount.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+            StatCard(stringResource(R.string.running), runningCount.toString(), AccessibilityRunning, Modifier.weight(1f))
+            StatCard(stringResource(R.string.installed), totalCount.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -153,7 +155,7 @@ fun AccessibilityScreen() {
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("搜索…") },
+            placeholder = { Text(stringResource(R.string.search_hint)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(24.dp),
             singleLine = true
@@ -165,12 +167,12 @@ fun AccessibilityScreen() {
             FilterChip(
                 selected = !showRunningOnly,
                 onClick = { showRunningOnly = false },
-                label = { Text("全部") }
+                label = { Text(stringResource(R.string.all)) }
             )
             FilterChip(
                 selected = showRunningOnly,
                 onClick = { showRunningOnly = true },
-                label = { Text("运行中") }
+                label = { Text(stringResource(R.string.running)) }
             )
         }
 

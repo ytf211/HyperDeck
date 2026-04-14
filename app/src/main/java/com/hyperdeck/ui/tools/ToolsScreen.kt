@@ -1,7 +1,6 @@
 package com.hyperdeck.ui.tools
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,7 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.hyperdeck.R
 
 data class ToolItem(
     val id: String,
@@ -48,16 +49,16 @@ fun ToolsScreen(
     val tools = listOf(
         ToolItem(
             id = "accessibility",
-            title = "无障碍管理",
-            description = "管理无障碍服务开关",
+            title = stringResource(R.string.accessibility_management),
+            description = stringResource(R.string.accessibility_desc),
             icon = Icons.Default.Accessibility,
             accentColor = Color(0xFF4CAF50),
             onClick = onNavigateToAccessibility
         ),
         ToolItem(
             id = "system_settings",
-            title = "系统设置",
-            description = "修改系统配置项",
+            title = stringResource(R.string.system_settings),
+            description = stringResource(R.string.system_settings_desc),
             icon = Icons.Default.Tune,
             accentColor = Color(0xFF2196F3),
             onClick = onNavigateToSystemSettings
@@ -81,9 +82,8 @@ fun ToolsScreen(
 @Composable
 private fun ToolCard(tool: ToolItem) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = tool.onClick),
+        onClick = tool.onClick,
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow

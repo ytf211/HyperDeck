@@ -49,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.hyperdeck.R
 import com.hyperdeck.data.config.SettingsConfigParser
 import com.hyperdeck.data.model.SettingsCategory
 import com.hyperdeck.data.model.SettingsItem
@@ -73,7 +75,7 @@ fun SystemSettingsScreen() {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "添加设置项")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_setting))
             }
         }
     ) { innerPadding ->
@@ -259,7 +261,7 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
     if (showInput) {
         AlertDialog(
             onDismissRequest = { showInput = false },
-            title = { Text("输入数值") },
+            title = { Text(stringResource(R.string.enter_value)) },
             text = {
                 OutlinedTextField(
                     value = inputText,
@@ -278,10 +280,10 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                         }
                     }
                     showInput = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showInput = false }) { Text("取消") }
+                TextButton(onClick = { showInput = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -363,7 +365,7 @@ private fun InputControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutine
                 val cmd = item.command.replace("{value}", text)
                 CommandExecutor.execute(cmd)
             }
-        }) { Text("应用") }
+        }) { Text(stringResource(R.string.apply)) }
     }
 }
 
@@ -381,23 +383,23 @@ private fun EditSettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑设置项") },
+        title = { Text(stringResource(R.string.edit_setting)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("标题") })
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("描述") })
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.title_label)) })
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.description_label)) })
                 if (item.type == "toggle") {
-                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text("开启命令") })
-                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text("关闭命令") })
+                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text(stringResource(R.string.command_on)) })
+                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text(stringResource(R.string.command_off)) })
                 } else {
-                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text("命令") })
+                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text(stringResource(R.string.command_label)) })
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 onSave(item.copy(title = title, description = description, command_on = commandOn, command_off = commandOff, command = command))
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("取消") }
@@ -420,29 +422,34 @@ private fun AddSettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加设置项") },
+        title = { Text(stringResource(R.string.add_setting)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("标题") })
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("描述") })
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.title_label)) })
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.description_label)) })
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("toggle", "slider", "input").forEach { t ->
+                    val typeLabels = mapOf(
+                        "toggle" to stringResource(R.string.type_toggle),
+                        "slider" to stringResource(R.string.type_slider),
+                        "input" to stringResource(R.string.type_input)
+                    )
+                    typeLabels.forEach { (t, label) ->
                         androidx.compose.material3.FilterChip(
                             selected = type == t,
                             onClick = { type = t },
-                            label = { Text(t) }
+                            label = { Text(label) }
                         )
                     }
                 }
 
                 if (type == "toggle") {
-                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text("开启命令") })
-                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text("关闭命令") })
+                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text(stringResource(R.string.command_on)) })
+                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text(stringResource(R.string.command_off)) })
                 } else {
-                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text("命令 (用{value}做占位)") })
+                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text(stringResource(R.string.command_label)) })
                 }
-                OutlinedTextField(value = checkCommand, onValueChange = { checkCommand = it }, label = { Text("检查命令") })
+                OutlinedTextField(value = checkCommand, onValueChange = { checkCommand = it }, label = { Text(stringResource(R.string.check_command)) })
             }
         },
         confirmButton = {
@@ -462,10 +469,10 @@ private fun AddSettingsDialog(
                         )
                     }
                 }
-            ) { Text("添加") }
+            ) { Text(stringResource(R.string.add)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

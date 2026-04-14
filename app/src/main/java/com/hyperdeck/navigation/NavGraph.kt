@@ -22,6 +22,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.res.stringResource
+import com.hyperdeck.R
 import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.components.HyperDeckTopBar
 import com.hyperdeck.ui.settings.AppSettingsScreen
@@ -49,9 +51,9 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     val bottomNavItems = listOf(
-        BottomNavItem("工具", Icons.Default.Build, ToolsRoute),
-        BottomNavItem("Shell", Icons.Default.Terminal, ShellRoute),
-        BottomNavItem("设置", Icons.Default.Settings, SettingsRoute),
+        BottomNavItem(stringResource(R.string.tab_tools), Icons.Default.Build, ToolsRoute),
+        BottomNavItem(stringResource(R.string.tab_shell), Icons.Default.Terminal, ShellRoute),
+        BottomNavItem(stringResource(R.string.tab_settings), Icons.Default.Settings, SettingsRoute),
     )
 
     val showBottomBar = navBackStackEntry?.destination?.let { dest ->
@@ -59,9 +61,9 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     } ?: true
 
     val currentTitle = when {
-        navBackStackEntry?.destination?.hasRoute<AccessibilityRoute>() == true -> "无障碍管理"
-        navBackStackEntry?.destination?.hasRoute<SystemSettingsRoute>() == true -> "系统设置"
-        else -> "HyperDeck"
+        navBackStackEntry?.destination?.hasRoute<AccessibilityRoute>() == true -> stringResource(R.string.accessibility_management)
+        navBackStackEntry?.destination?.hasRoute<SystemSettingsRoute>() == true -> stringResource(R.string.system_settings)
+        else -> stringResource(R.string.app_name)
     }
 
     val showBackButton = navBackStackEntry?.destination?.let { dest ->

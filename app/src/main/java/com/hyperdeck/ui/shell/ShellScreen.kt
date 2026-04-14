@@ -36,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.hyperdeck.R
 import com.hyperdeck.shizuku.CommandExecutor
 import com.hyperdeck.ui.theme.TerminalBackground
 import com.hyperdeck.ui.theme.TerminalText
@@ -54,15 +56,14 @@ fun ShellScreen() {
     val scope = rememberCoroutineScope()
     val outputScrollState = rememberScrollState()
 
-    val quickCommands = remember {
-        listOf(
-            "剪贴板" to "dumpsys clipboard",
-            "内存信息" to "cat /proc/meminfo | head -5",
-            "电池信息" to "dumpsys battery",
-            "屏幕分辨率" to "wm size",
-            "DPI" to "wm density",
-            "系统版本" to "getprop ro.build.display.id"
-        )
+    val quickCommands = listOf(
+        stringResource(R.string.clipboard) to "dumpsys clipboard",
+        stringResource(R.string.memory_info) to "cat /proc/meminfo | head -5",
+        stringResource(R.string.battery_info) to "dumpsys battery",
+        stringResource(R.string.screen_resolution) to "wm size",
+        "DPI" to "wm density",
+        stringResource(R.string.system_version) to "getprop ro.build.display.id"
+    )
     }
 
     fun executeCommand(cmd: String) {
@@ -149,7 +150,7 @@ fun ShellScreen() {
                 value = inputText,
                 onValueChange = { inputText = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("输入命令…") },
+                placeholder = { Text(stringResource(R.string.shell_input_hint)) },
                 shape = RoundedCornerShape(24.dp),
                 singleLine = true
             )
@@ -162,7 +163,7 @@ fun ShellScreen() {
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "发送",
+                    contentDescription = stringResource(R.string.send),
                     modifier = Modifier.size(24.dp)
                 )
             }

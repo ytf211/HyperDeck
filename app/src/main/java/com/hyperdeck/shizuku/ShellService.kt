@@ -1,10 +1,21 @@
 package com.hyperdeck.shizuku
 
+import android.content.Context
 import android.util.Log
+import androidx.annotation.Keep
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-class ShellService : IShellService.Stub() {
+class ShellService : IShellService.Stub {
+
+    constructor() {
+        Log.i(TAG, "constructor")
+    }
+
+    @Keep
+    constructor(context: Context) {
+        Log.i(TAG, "constructor with Context: $context")
+    }
 
     override fun destroy() {
         Log.i(TAG, "destroy")

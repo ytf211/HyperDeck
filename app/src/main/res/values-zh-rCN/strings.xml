@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HyperDeck</string>
+    <string name="tab_tools">工具</string>
+    <string name="tab_shell">Shell</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- Shizuku -->
+    <string name="shizuku_connected">Shizuku 已连接</string>
+    <string name="shizuku_disconnected">Shizuku 未连接</string>
+    <string name="shizuku_not_installed">Shizuku 未安装</string>
+    <string name="service_connected">服务已连接</string>
+    <string name="authorize_shizuku">授权 Shizuku</string>
+    <string name="connect_service">连接服务</string>
+    <string name="shizuku_config">Shizuku 配置</string>
+    <string name="connection_status">连接状态</string>
+    <string name="run_mode">运行模式</string>
+    <string name="api_version">API 版本</string>
+
+    <!-- Tools -->
+    <string name="accessibility_management">无障碍管理</string>
+    <string name="accessibility_desc">管理无障碍服务开关</string>
+    <string name="system_settings">系统设置</string>
+    <string name="system_settings_desc">修改系统配置项</string>
+
+    <!-- Shell -->
+    <string name="shell_input_hint">输入命令…</string>
+    <string name="send">发送</string>
+    <string name="clipboard">剪贴板</string>
+    <string name="memory_info">内存信息</string>
+    <string name="battery_info">电池信息</string>
+    <string name="screen_resolution">屏幕分辨率</string>
+    <string name="system_version">系统版本</string>
+
+    <!-- Accessibility -->
+    <string name="search_hint">搜索…</string>
+    <string name="all">全部</string>
+    <string name="running">运行中</string>
+    <string name="installed">已安装</string>
+
+    <!-- Settings -->
+    <string name="dark_mode">深色模式</string>
+    <string name="app_settings">应用设置</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="package_name">包名</string>
+
+    <!-- System Settings types -->
+    <string name="type_toggle">开关</string>
+    <string name="type_slider">滑块</string>
+    <string name="type_select">选择</string>
+    <string name="type_input">输入</string>
+
+    <!-- Dialogs -->
+    <string name="edit_setting">编辑设置项</string>
+    <string name="add_setting">添加设置项</string>
+    <string name="title_label">标题</string>
+    <string name="description_label">描述</string>
+    <string name="command_on">开启命令</string>
+    <string name="command_off">关闭命令</string>
+    <string name="command_label">命令 (用{value}做占位)</string>
+    <string name="check_command">检查命令</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="add">添加</string>
+    <string name="apply">应用</string>
+    <string name="enter_value">输入数值</string>
+    <string name="confirm">确定</string>
+    <string name="back">返回</string>
+</resources>

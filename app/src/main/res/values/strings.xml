@@ -1,36 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HyperDeck</string>
-    <string name="tab_tools">工具</string>
+    <string name="tab_tools">Tools</string>
     <string name="tab_shell">Shell</string>
-    <string name="tab_settings">设置</string>
-    <string name="shizuku_connected">Shizuku 已连接</string>
-    <string name="shizuku_disconnected">Shizuku 未连接</string>
-    <string name="shizuku_not_installed">Shizuku 未安装</string>
-    <string name="accessibility_management">无障碍管理</string>
-    <string name="system_settings">系统设置</string>
-    <string name="shell_input_hint">输入命令…</string>
-    <string name="send">发送</string>
-    <string name="search_hint">搜索…</string>
-    <string name="all">全部</string>
-    <string name="running">运行中</string>
-    <string name="stopped">已停止</string>
-    <string name="dark_mode">深色模式</string>
-    <string name="about">关于</string>
-    <string name="version">版本</string>
-    <string name="reconnect">重新连接</string>
-    <string name="add_setting">添加设置项</string>
-    <string name="edit">编辑</string>
-    <string name="save">保存</string>
-    <string name="cancel">取消</string>
-    <string name="delete">删除</string>
-    <string name="title">标题</string>
-    <string name="description">描述</string>
-    <string name="command">命令</string>
-    <string name="quick_commands">快捷命令</string>
-    <string name="connection_status">连接状态</string>
-    <string name="run_mode">运行模式</string>
-    <string name="api_version">API 版本</string>
-    <string name="app_settings">应用设置</string>
-    <string name="shizuku_config">Shizuku 配置</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Shizuku -->
+    <string name="shizuku_connected">Shizuku Connected</string>
+    <string name="shizuku_disconnected">Shizuku Not Connected</string>
+    <string name="shizuku_not_installed">Shizuku Not Installed</string>
+    <string name="service_connected">Service Connected</string>
+    <string name="authorize_shizuku">Authorize Shizuku</string>
+    <string name="connect_service">Connect Service</string>
+    <string name="shizuku_config">Shizuku Config</string>
+    <string name="connection_status">Connection Status</string>
+    <string name="run_mode">Run Mode</string>
+    <string name="api_version">API Version</string>
+
+    <!-- Tools -->
+    <string name="accessibility_management">Accessibility</string>
+    <string name="accessibility_desc">Manage accessibility services</string>
+    <string name="system_settings">System Settings</string>
+    <string name="system_settings_desc">Modify system config items</string>
+
+    <!-- Shell -->
+    <string name="shell_input_hint">Enter command…</string>
+    <string name="send">Send</string>
+    <string name="clipboard">Clipboard</string>
+    <string name="memory_info">Memory Info</string>
+    <string name="battery_info">Battery Info</string>
+    <string name="screen_resolution">Resolution</string>
+    <string name="system_version">System Version</string>
+
+    <!-- Accessibility -->
+    <string name="search_hint">Search…</string>
+    <string name="all">All</string>
+    <string name="running">Running</string>
+    <string name="installed">Installed</string>
+
+    <!-- Settings -->
+    <string name="dark_mode">Dark Mode</string>
+    <string name="app_settings">App Settings</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="package_name">Package Name</string>
+
+    <!-- System Settings types -->
+    <string name="type_toggle">Toggle</string>
+    <string name="type_slider">Slider</string>
+    <string name="type_select">Select</string>
+    <string name="type_input">Input</string>
+
+    <!-- Dialogs -->
+    <string name="edit_setting">Edit Setting</string>
+    <string name="add_setting">Add Setting</string>
+    <string name="title_label">Title</string>
+    <string name="description_label">Description</string>
+    <string name="command_on">Enable Command</string>
+    <string name="command_off">Disable Command</string>
+    <string name="command_label">Command (use {value})</string>
+    <string name="check_command">Check Command</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+    <string name="apply">Apply</string>
+    <string name="enter_value">Enter Value</string>
+    <string name="confirm">OK</string>
+    <string name="back">Back</string>
 </resources>
