@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -28,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -58,6 +60,7 @@ fun LogScreen() {
     val enabled by LogRepository.enabled.collectAsState()
     var autoScroll by remember { mutableStateOf(true) }
     var showLevelMenu by remember { mutableStateOf(false) }
+    var showClearConfirm by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val dateFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
 
@@ -74,13 +77,11 @@ fun LogScreen() {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Action bar
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Level filter
             IconButton(onClick = { showLevelMenu = true }) {
                 Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.log_level))
             }
@@ -129,12 +130,11 @@ fun LogScreen() {
                 Icon(Icons.Default.Share, contentDescription = stringResource(R.string.log_share))
             }
 
-            IconButton(onClick = { LogRepository.clear() }) {
+            IconButton(onClick = { showClearConfirm = true }) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.log_clear))
             }
         }
 
-        // Log content
         if (filteredEntries.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -152,8 +152,7 @@ fun LogScreen() {
                     .background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(8.dp)),
                 verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
-                items(filteredEntries.size) { index ->
-                    val entry = filteredEntries[index]
+                items(filteredEntries, key = { "${it.timestamp}_${it.tag}_${it.message.hashCode()}" }) { entry ->
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)) {
                         Text(
                             dateFormat.format(Date(entry.timestamp)),
@@ -180,6 +179,28 @@ fun LogScreen() {
                 }
             }
         }
+    }
+
+    // Clear confirmation dialog
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(stringResource(R.string.confirm_clear)) },
+            text = { Text(stringResource(R.string.confirm_clear_log_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    LogRepository.clear()
+                    showClearConfirm = false
+                }) {
+                    Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 

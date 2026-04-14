@@ -16,6 +16,13 @@
     <string name="connection_status">连接状态</string>
     <string name="run_mode">运行模式</string>
     <string name="api_version">API 版本</string>
+    <string name="shizuku_install_guide">请安装 Shizuku 应用以使用完整功能。</string>
+
+    <!-- Status indicator -->
+    <string name="status_connected">已连接</string>
+    <string name="status_not_bound">未绑定</string>
+    <string name="status_unauthorized">未授权</string>
+    <string name="status_not_installed">未安装</string>
 
     <!-- Tools -->
     <string name="accessibility_management">无障碍管理</string>
@@ -26,12 +33,16 @@
     <!-- Shell -->
     <string name="shell_input_hint">输入命令…</string>
     <string name="send">发送</string>
+    <string name="stop">停止</string>
     <string name="clipboard">剪贴板</string>
     <string name="memory_info">内存信息</string>
     <string name="battery_info">电池信息</string>
     <string name="screen_resolution">屏幕分辨率</string>
     <string name="system_version">系统版本</string>
     <string name="quick_commands">快捷命令</string>
+    <string name="delete_quick_command">确定删除此快捷命令？</string>
+    <string name="confirm_clear">清除记录</string>
+    <string name="confirm_clear_message">确定清除所有 Shell 记录？</string>
 
     <!-- Accessibility -->
     <string name="search_hint">搜索…</string>
@@ -40,17 +51,28 @@
     <string name="installed">已安装</string>
 
     <!-- Settings -->
-    <string name="dark_mode">深色模式</string>
+    <string name="dark_mode">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
     <string name="app_settings">应用设置</string>
     <string name="about">关于</string>
     <string name="version">版本</string>
     <string name="package_name">包名</string>
+    <string name="config_management">配置管理</string>
+    <string name="export_config">导出配置</string>
+    <string name="import_config">导入配置</string>
 
     <!-- System Settings types -->
     <string name="type_toggle">开关</string>
     <string name="type_slider">滑块</string>
     <string name="type_select">选择</string>
     <string name="type_input">输入</string>
+
+    <!-- Categories -->
+    <string name="add_category">添加分类</string>
+    <string name="category_name">分类名称</string>
+    <string name="confirm_delete_category">确定删除此分类？</string>
 
     <!-- Dialogs -->
     <string name="edit_setting">编辑设置项</string>
@@ -71,7 +93,7 @@
     <string name="back">返回</string>
 
     <!-- Log -->
-    <string name="log_mode">日志模式</string>
+    <string name="log_mode">日志查看</string>
     <string name="log_enabled">启用日志</string>
     <string name="log_level">日志等级</string>
     <string name="log_export">导出日志</string>
@@ -83,4 +105,5 @@
     <string name="log_share">分享</string>
     <string name="log_copy_all">复制全部</string>
     <string name="log_copied">已复制到剪贴板</string>
+    <string name="confirm_clear_log_message">确定清除所有日志？</string>
 </resources>

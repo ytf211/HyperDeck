@@ -1,8 +1,7 @@
 package com.hyperdeck.ui.tools.settings
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,24 +9,31 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.ToggleOn
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -40,60 +46,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
-import com.hyperdeck.data.config.SettingsConfigParser
-import com.hyperdeck.data.model.SettingsCategory
 import com.hyperdeck.data.model.SettingsItem
-import com.hyperdeck.shizuku.CommandExecutor
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SystemSettingsScreen(categoryFilter: String? = null) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val categories = remember { mutableStateListOf<SettingsCategory>() }
+fun SystemSettingsScreen(
+    categoryFilter: String? = null,
+    viewModel: SystemSettingsViewModel = viewModel()
+) {
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     var editingItem by remember { mutableStateOf<SettingsItem?>(null) }
     var deletingItem by remember { mutableStateOf<SettingsItem?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val loaded = SettingsConfigParser.loadFromInternal(context)
-        categories.clear()
-        if (categoryFilter != null) {
-            loaded.filter { it.category == categoryFilter }.let { categories.addAll(it) }
-        } else {
-            categories.addAll(loaded)
-        }
-    }
-
-    // Save while preserving categories not shown on this screen
-    val saveCategories: () -> Unit = {
-        if (categoryFilter == null) {
-            SettingsConfigParser.saveToInternal(context, categories.toList())
-        } else {
-            val all = SettingsConfigParser.loadFromInternal(context).toMutableList()
-            val idx = all.indexOfFirst { it.category == categoryFilter }
-            if (categories.isNotEmpty() && idx >= 0) {
-                all[idx] = categories[0]
-            } else if (categories.isEmpty() && idx >= 0) {
-                all.removeAt(idx)
-            } else if (categories.isNotEmpty() && idx < 0) {
-                all.addAll(categories)
-            }
-            SettingsConfigParser.saveToInternal(context, all)
-        }
+    LaunchedEffect(categoryFilter) {
+        viewModel.loadForCategory(categoryFilter)
     }
 
     Scaffold(
@@ -122,7 +100,8 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
                 items(category.items, key = { "${category.category}:${it.title}" }) { item ->
                     SettingsItemCard(
                         item = item,
-                        onLongClick = { editingItem = item },
+                        viewModel = viewModel,
+                        onEdit = { editingItem = item },
                         onDelete = { deletingItem = item }
                     )
                 }
@@ -130,29 +109,19 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
         }
     }
 
+    // Edit dialog
     if (editingItem != null) {
         EditSettingsDialog(
             item = editingItem!!,
             onDismiss = { editingItem = null },
             onSave = { updated ->
-                val catIdx = categories.indexOfFirst { cat ->
-                    cat.items.any { it.title == editingItem!!.title }
-                }
-                if (catIdx >= 0) {
-                    val cat = categories[catIdx]
-                    val itemIdx = cat.items.indexOfFirst { it.title == editingItem!!.title }
-                    if (itemIdx >= 0) {
-                        val newItems = cat.items.toMutableList()
-                        newItems[itemIdx] = updated
-                        categories[catIdx] = cat.copy(items = newItems)
-                        saveCategories()
-                    }
-                }
+                viewModel.updateItem(editingItem!!.title, updated)
                 editingItem = null
             }
         )
     }
 
+    // Delete confirmation dialog
     if (deletingItem != null) {
         AlertDialog(
             onDismissRequest = { deletingItem = null },
@@ -160,110 +129,133 @@ fun SystemSettingsScreen(categoryFilter: String? = null) {
             text = { Text("${deletingItem!!.title}?") },
             confirmButton = {
                 TextButton(onClick = {
-                    val item = deletingItem!!
-                    val catIdx = categories.indexOfFirst { cat -> cat.items.contains(item) }
-                    if (catIdx >= 0) {
-                        val cat = categories[catIdx]
-                        val newItems = cat.items.filter { it != item }
-                        if (newItems.isEmpty()) {
-                            categories.removeAt(catIdx)
-                        } else {
-                            categories[catIdx] = cat.copy(items = newItems)
-                        }
-                        saveCategories()
-                    }
+                    viewModel.deleteItem(deletingItem!!)
                     deletingItem = null
-                }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error) }
+                }) {
+                    Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { deletingItem = null }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { deletingItem = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
 
+    // Add dialog
     if (showAddDialog) {
         AddSettingsDialog(
             onDismiss = { showAddDialog = false },
             onAdd = { newItem ->
-                if (categories.isNotEmpty()) {
-                    val cat = categories[0]
-                    categories[0] = cat.copy(items = cat.items + newItem)
-                } else {
-                    categories.add(SettingsCategory("Custom", listOf(newItem)))
-                }
-                saveCategories()
+                viewModel.addItem(newItem)
                 showAddDialog = false
             }
         )
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SettingsItemCard(
     item: SettingsItem,
-    onLongClick: () -> Unit,
-    onDelete: () -> Unit = {}
+    viewModel: SystemSettingsViewModel,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .combinedClickable(
-                onClick = {},
-                onLongClick = { showMenu = true }
-            ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
+    val typeIcon: ImageVector = when (item.type) {
+        "toggle" -> Icons.Outlined.ToggleOn
+        "slider" -> Icons.Outlined.Tune
+        "select" -> Icons.Outlined.List
+        "input" -> Icons.Outlined.Edit
+        else -> Icons.Outlined.Edit
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            if (showMenu) {
-                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.edit_setting)) },
-                        onClick = { showMenu = false; onLongClick() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
-                        onClick = { showMenu = false; onDelete() }
-                    )
+            // Header row: type icon + title + more button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = typeIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(item.title, style = MaterialTheme.typography.titleSmall)
+                    if (item.description.isNotBlank()) {
+                        Text(
+                            item.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.edit_setting)) },
+                            onClick = { showMenu = false; onEdit() }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.delete),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = { showMenu = false; onDelete() }
+                        )
+                    }
                 }
             }
-            Text(item.title, style = MaterialTheme.typography.titleSmall)
-            if (item.description.isNotBlank()) {
-                Text(
-                    item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+
             Spacer(Modifier.height(8.dp))
 
+            // Control based on type
             when (item.type) {
-                "toggle" -> ToggleControl(item, scope)
-                "slider" -> SliderControl(item, scope)
-                "select" -> SelectControl(item, scope)
-                "input" -> InputControl(item, scope)
+                "toggle" -> ToggleControl(item, viewModel)
+                "slider" -> SliderControl(item, viewModel)
+                "select" -> SelectControl(item, viewModel)
+                "input" -> InputControl(item, viewModel)
             }
         }
     }
 }
 
 @Composable
-private fun ToggleControl(item: SettingsItem, scope: kotlinx.coroutines.CoroutineScope) {
+private fun ToggleControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
     var checked by remember { mutableStateOf(false) }
     var loaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(item.check_command) {
         if (item.check_command.isNotBlank()) {
-            val result = CommandExecutor.execute(item.check_command)
-            checked = result.output != "null" && result.output.isNotBlank()
-            loaded = true
+            viewModel.executeCommand(item.check_command) { result ->
+                checked = SystemSettingsViewModel.parseToggleState(result.output)
+                loaded = true
+            }
         }
     }
 
@@ -276,13 +268,13 @@ private fun ToggleControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
             enabled = loaded,
             onCheckedChange = { newValue ->
                 checked = newValue
-                scope.launch {
-                    val cmd = if (newValue) item.command_on else item.command_off
-                    CommandExecutor.execute(cmd)
+                val cmd = if (newValue) item.command_on else item.command_off
+                viewModel.executeCommand(cmd) {
                     // Re-read actual state
                     if (item.check_command.isNotBlank()) {
-                        val result = CommandExecutor.execute(item.check_command)
-                        checked = result.output != "null" && result.output.isNotBlank()
+                        viewModel.executeCommand(item.check_command) { result ->
+                            checked = SystemSettingsViewModel.parseToggleState(result.output)
+                        }
                     }
                 }
             }
@@ -291,15 +283,16 @@ private fun ToggleControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
 }
 
 @Composable
-private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.CoroutineScope) {
+private fun SliderControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
     var value by remember { mutableFloatStateOf(item.min) }
     var showInput by remember { mutableStateOf(false) }
     var inputText by remember { mutableStateOf("") }
 
     LaunchedEffect(item.check_command) {
         if (item.check_command.isNotBlank()) {
-            val result = CommandExecutor.execute(item.check_command)
-            result.output.toFloatOrNull()?.let { value = it }
+            viewModel.executeCommand(item.check_command) { result ->
+                result.output.trim().toFloatOrNull()?.let { value = it }
+            }
         }
     }
 
@@ -312,12 +305,12 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                 value = value,
                 onValueChange = { value = it },
                 onValueChangeFinished = {
-                    scope.launch {
-                        val cmd = item.command.replace("{value}", value.toString())
-                        CommandExecutor.execute(cmd)
+                    val cmd = item.command.replace("{value}", value.toString())
+                    viewModel.executeCommand(cmd) {
                         if (item.check_command.isNotBlank()) {
-                            val result = CommandExecutor.execute(item.check_command)
-                            result.output.toFloatOrNull()?.let { value = it }
+                            viewModel.executeCommand(item.check_command) { result ->
+                                result.output.trim().toFloatOrNull()?.let { value = it }
+                            }
                         }
                     }
                 },
@@ -351,16 +344,18 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                 TextButton(onClick = {
                     inputText.toFloatOrNull()?.let { v ->
                         value = v.coerceIn(item.min, item.max)
-                        scope.launch {
-                            val cmd = item.command.replace("{value}", value.toString())
-                            CommandExecutor.execute(cmd)
-                        }
+                        val cmd = item.command.replace("{value}", value.toString())
+                        viewModel.executeCommand(cmd) {}
                     }
                     showInput = false
-                }) { Text(stringResource(R.string.confirm)) }
+                }) {
+                    Text(stringResource(R.string.confirm))
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showInput = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showInput = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
@@ -368,15 +363,16 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SelectControl(item: SettingsItem, scope: kotlinx.coroutines.CoroutineScope) {
+private fun SelectControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
     var expanded by remember { mutableStateOf(false) }
     var selectedLabel by remember { mutableStateOf("") }
 
     LaunchedEffect(item.check_command) {
         if (item.check_command.isNotBlank()) {
-            val result = CommandExecutor.execute(item.check_command)
-            val currentValue = result.output.trim()
-            selectedLabel = item.options.find { it.value == currentValue }?.label ?: currentValue
+            viewModel.executeCommand(item.check_command) { result ->
+                val currentValue = result.output.trim()
+                selectedLabel = item.options.find { it.value == currentValue }?.label ?: currentValue
+            }
         }
     }
 
@@ -403,10 +399,8 @@ private fun SelectControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                     onClick = {
                         selectedLabel = option.label
                         expanded = false
-                        scope.launch {
-                            val cmd = item.command.replace("{value}", option.value)
-                            CommandExecutor.execute(cmd)
-                        }
+                        val cmd = item.command.replace("{value}", option.value)
+                        viewModel.executeCommand(cmd) {}
                     }
                 )
             }
@@ -415,13 +409,15 @@ private fun SelectControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
 }
 
 @Composable
-private fun InputControl(item: SettingsItem, scope: kotlinx.coroutines.CoroutineScope) {
+private fun InputControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
     var text by remember { mutableStateOf("") }
 
     LaunchedEffect(item.check_command) {
         if (item.check_command.isNotBlank()) {
-            val result = CommandExecutor.execute(item.check_command)
-            if (result.output != "null") text = result.output
+            viewModel.executeCommand(item.check_command) { result ->
+                val trimmed = result.output.trim()
+                if (trimmed != "null") text = trimmed
+            }
         }
     }
 
@@ -438,11 +434,11 @@ private fun InputControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutine
         )
         Spacer(Modifier.width(8.dp))
         TextButton(onClick = {
-            scope.launch {
-                val cmd = item.command.replace("{value}", text)
-                CommandExecutor.execute(cmd)
-            }
-        }) { Text(stringResource(R.string.apply)) }
+            val cmd = item.command.replace("{value}", text)
+            viewModel.executeCommand(cmd) {}
+        }) {
+            Text(stringResource(R.string.apply))
+        }
     }
 }
 
@@ -464,24 +460,72 @@ private fun EditSettingsDialog(
         title = { Text(stringResource(R.string.edit_setting)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.title_label)) })
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.description_label)) })
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.title_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text(stringResource(R.string.description_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 if (item.type == "toggle") {
-                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text(stringResource(R.string.command_on)) })
-                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text(stringResource(R.string.command_off)) })
+                    OutlinedTextField(
+                        value = commandOn,
+                        onValueChange = { commandOn = it },
+                        label = { Text(stringResource(R.string.command_on)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = commandOff,
+                        onValueChange = { commandOff = it },
+                        label = { Text(stringResource(R.string.command_off)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 } else {
-                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text(stringResource(R.string.command_label)) })
+                    OutlinedTextField(
+                        value = command,
+                        onValueChange = { command = it },
+                        label = { Text(stringResource(R.string.command_label)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                OutlinedTextField(value = checkCommand, onValueChange = { checkCommand = it }, label = { Text(stringResource(R.string.check_command)) })
+                OutlinedTextField(
+                    value = checkCommand,
+                    onValueChange = { checkCommand = it },
+                    label = { Text(stringResource(R.string.check_command)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(item.copy(title = title, description = description, command_on = commandOn, command_off = commandOff, command = command, check_command = checkCommand))
-            }) { Text(stringResource(R.string.save)) }
+                onSave(
+                    item.copy(
+                        title = title,
+                        description = description,
+                        command_on = commandOn,
+                        command_off = commandOff,
+                        command = command,
+                        check_command = checkCommand
+                    )
+                )
+            }) {
+                Text(stringResource(R.string.save))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
         }
     )
 }
@@ -504,8 +548,19 @@ private fun AddSettingsDialog(
         title = { Text(stringResource(R.string.add_setting)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.title_label)) })
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.description_label)) })
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.title_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text(stringResource(R.string.description_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val typeLabels = mapOf(
@@ -514,7 +569,7 @@ private fun AddSettingsDialog(
                         "input" to stringResource(R.string.type_input)
                     )
                     typeLabels.forEach { (t, label) ->
-                        androidx.compose.material3.FilterChip(
+                        FilterChip(
                             selected = type == t,
                             onClick = { type = t },
                             label = { Text(label) }
@@ -523,12 +578,36 @@ private fun AddSettingsDialog(
                 }
 
                 if (type == "toggle") {
-                    OutlinedTextField(value = commandOn, onValueChange = { commandOn = it }, label = { Text(stringResource(R.string.command_on)) })
-                    OutlinedTextField(value = commandOff, onValueChange = { commandOff = it }, label = { Text(stringResource(R.string.command_off)) })
+                    OutlinedTextField(
+                        value = commandOn,
+                        onValueChange = { commandOn = it },
+                        label = { Text(stringResource(R.string.command_on)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = commandOff,
+                        onValueChange = { commandOff = it },
+                        label = { Text(stringResource(R.string.command_off)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 } else {
-                    OutlinedTextField(value = command, onValueChange = { command = it }, label = { Text(stringResource(R.string.command_label)) })
+                    OutlinedTextField(
+                        value = command,
+                        onValueChange = { command = it },
+                        label = { Text(stringResource(R.string.command_label)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                OutlinedTextField(value = checkCommand, onValueChange = { checkCommand = it }, label = { Text(stringResource(R.string.check_command)) })
+                OutlinedTextField(
+                    value = checkCommand,
+                    onValueChange = { checkCommand = it },
+                    label = { Text(stringResource(R.string.check_command)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
@@ -548,10 +627,14 @@ private fun AddSettingsDialog(
                         )
                     }
                 }
-            ) { Text(stringResource(R.string.add)) }
+            ) {
+                Text(stringResource(R.string.add))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
         }
     )
 }

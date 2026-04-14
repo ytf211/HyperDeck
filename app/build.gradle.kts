@@ -22,8 +22,8 @@ android {
         applicationId = "com.hyperdeck"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.2.4"
+        versionCode = 6
+        versionName = "0.2.5"
     }
 
     buildTypes {
@@ -51,6 +51,7 @@ android {
     buildFeatures {
         compose = true
         aidl = true
+        buildConfig = true
     }
 }
 
@@ -73,6 +74,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.reorderable)
 
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)

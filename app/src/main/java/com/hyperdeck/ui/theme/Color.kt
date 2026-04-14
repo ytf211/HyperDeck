@@ -11,8 +11,11 @@ val ShizukuGreen = Color(0xFF4CAF50)
 val ShizukuRed = Color(0xFFF44336)
 val ShizukuGray = Color(0xFF9E9E9E)
 
-val TerminalBackground = Color(0xFF1E1E1E)
-val TerminalText = Color(0xFFE0E0E0)
-
 val AccessibilityRunning = Color(0xFF4CAF50)
 val AccessibilityStopped = Color(0xFF9E9E9E)
+
+// Theme-aware terminal colors
+val TerminalBackgroundDark = Color(0xFF0D1117)
+val TerminalBackgroundLight = Color(0xFFF6F8FA)
+val TerminalTextDark = Color(0xFFE6EDF3)
+val TerminalTextLight = Color(0xFF1F2328)

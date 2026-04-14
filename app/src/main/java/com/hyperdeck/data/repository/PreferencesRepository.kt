@@ -7,38 +7,67 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.hyperdeck.data.model.QuickCommand
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class PreferencesRepository(private val context: Context) {
 
     companion object {
-        private val DARK_MODE = booleanPreferencesKey("dark_mode")
-        private val TOOL_CARD_ORDER = stringPreferencesKey("tool_card_order")
-        private val QUICK_COMMAND_ORDER = stringPreferencesKey("quick_command_order")
+        private val DARK_MODE = stringPreferencesKey("dark_mode_v2") // "true"/"false"/null(system)
+        private val QUICK_COMMANDS = stringPreferencesKey("quick_commands")
+        private val CATEGORY_ORDER = stringPreferencesKey("category_order")
+
+        private val json = Json { ignoreUnknownKeys = true }
+
+        private fun defaultQuickCommands(): List<QuickCommand> = listOf(
+            QuickCommand("1", "getprop", "getprop ro.build.display.id", 0),
+            QuickCommand("2", "battery", "dumpsys battery", 1),
+            QuickCommand("3", "wm size", "wm size", 2),
+            QuickCommand("4", "wm density", "wm density", 3),
+            QuickCommand("5", "meminfo", "cat /proc/meminfo | head -5", 4),
+        )
     }
 
-    val darkMode: Flow<Boolean?> = context.dataStore.data.map { it[DARK_MODE] }
-
-    suspend fun setDarkMode(enabled: Boolean) {
-        context.dataStore.edit { it[DARK_MODE] = enabled }
+    // Dark mode: null = follow system, true = dark, false = light
+    val darkMode: Flow<Boolean?> = context.dataStore.data.map { prefs ->
+        prefs[DARK_MODE]?.toBooleanStrictOrNull()
     }
 
-    val toolCardOrder: Flow<List<String>> = context.dataStore.data.map { prefs ->
-        prefs[TOOL_CARD_ORDER]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    suspend fun setDarkMode(enabled: Boolean?) {
+        context.dataStore.edit { prefs ->
+            if (enabled == null) {
+                prefs.remove(DARK_MODE)
+            } else {
+                prefs[DARK_MODE] = enabled.toString()
+            }
+        }
     }
 
-    suspend fun setToolCardOrder(order: List<String>) {
-        context.dataStore.edit { it[TOOL_CARD_ORDER] = order.joinToString(",") }
+    val quickCommands: Flow<List<QuickCommand>> = context.dataStore.data.map { prefs ->
+        prefs[QUICK_COMMANDS]?.let {
+            try {
+                json.decodeFromString<List<QuickCommand>>(it)
+            } catch (_: Exception) {
+                defaultQuickCommands()
+            }
+        } ?: defaultQuickCommands()
     }
 
-    val quickCommandOrder: Flow<List<String>> = context.dataStore.data.map { prefs ->
-        prefs[QUICK_COMMAND_ORDER]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    suspend fun setQuickCommands(commands: List<QuickCommand>) {
+        context.dataStore.edit {
+            it[QUICK_COMMANDS] = json.encodeToString(commands)
+        }
     }
 
-    suspend fun setQuickCommandOrder(order: List<String>) {
-        context.dataStore.edit { it[QUICK_COMMAND_ORDER] = order.joinToString(",") }
+    val categoryOrder: Flow<List<String>> = context.dataStore.data.map { prefs ->
+        prefs[CATEGORY_ORDER]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+
+    suspend fun setCategoryOrder(order: List<String>) {
+        context.dataStore.edit { it[CATEGORY_ORDER] = order.joinToString(",") }
     }
 }

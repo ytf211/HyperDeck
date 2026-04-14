@@ -16,6 +16,13 @@
     <string name="connection_status">Connection Status</string>
     <string name="run_mode">Run Mode</string>
     <string name="api_version">API Version</string>
+    <string name="shizuku_install_guide">Install Shizuku to use full features.</string>
+
+    <!-- Status indicator -->
+    <string name="status_connected">Connected</string>
+    <string name="status_not_bound">Not Bound</string>
+    <string name="status_unauthorized">Unauthorized</string>
+    <string name="status_not_installed">Not Installed</string>
 
     <!-- Tools -->
     <string name="accessibility_management">Accessibility</string>
@@ -32,6 +39,10 @@
     <string name="screen_resolution">Resolution</string>
     <string name="system_version">System Version</string>
     <string name="quick_commands">Quick Commands</string>
+    <string name="confirm_clear">Clear History</string>
+    <string name="confirm_clear_message">Are you sure you want to clear all shell history?</string>
+    <string name="stop">Stop</string>
+    <string name="delete_quick_command">Delete this quick command?</string>
 
     <!-- Accessibility -->
     <string name="search_hint">Search…</string>
@@ -40,17 +51,28 @@
     <string name="installed">Installed</string>
 
     <!-- Settings -->
-    <string name="dark_mode">Dark Mode</string>
+    <string name="dark_mode">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="app_settings">App Settings</string>
     <string name="about">About</string>
     <string name="version">Version</string>
     <string name="package_name">Package Name</string>
+    <string name="config_management">Config Management</string>
+    <string name="export_config">Export</string>
+    <string name="import_config">Import</string>
 
     <!-- System Settings types -->
     <string name="type_toggle">Toggle</string>
     <string name="type_slider">Slider</string>
     <string name="type_select">Select</string>
     <string name="type_input">Input</string>
+
+    <!-- Categories -->
+    <string name="add_category">Add Category</string>
+    <string name="category_name">Category Name</string>
+    <string name="confirm_delete_category">Delete this category?</string>
 
     <!-- Dialogs -->
     <string name="edit_setting">Edit Setting</string>
@@ -71,7 +93,7 @@
     <string name="back">Back</string>
 
     <!-- Log -->
-    <string name="log_mode">Log Mode</string>
+    <string name="log_mode">Log Viewer</string>
     <string name="log_enabled">Enable Logging</string>
     <string name="log_level">Log Level</string>
     <string name="log_export">Export Log</string>
@@ -83,4 +105,5 @@
     <string name="log_share">Share</string>
     <string name="log_copy_all">Copy All</string>
     <string name="log_copied">Copied to clipboard</string>
+    <string name="confirm_clear_log_message">Clear all log entries?</string>
 </resources>

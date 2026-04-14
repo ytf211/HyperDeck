@@ -27,37 +27,31 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
-import com.hyperdeck.data.model.AccessibilityServiceInfo
-import com.hyperdeck.shizuku.CommandExecutor
-import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.theme.AccessibilityRunning
 import com.hyperdeck.ui.theme.AccessibilityStopped
-import kotlinx.coroutines.launch
 
 @Composable
-fun AccessibilityScreen(shizukuManager: ShizukuManager) {
-    val context = LocalContext.current
-    val pm = context.packageManager
-    val scope = rememberCoroutineScope()
-    val services = remember { mutableStateListOf<AccessibilityServiceInfo>() }
+fun AccessibilityScreen(
+    shizukuManager: com.hyperdeck.shizuku.ShizukuManager,
+    viewModel: AccessibilityViewModel = viewModel()
+) {
+    val services by viewModel.services.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val svcConnected by viewModel.serviceConnected.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
     var showRunningOnly by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(false) }
-    val svcConnected by shizukuManager.serviceConnected.collectAsState()
 
     val filteredServices by remember {
         derivedStateOf {
@@ -75,79 +69,9 @@ fun AccessibilityScreen(shizukuManager: ShizukuManager) {
     val runningCount by remember { derivedStateOf { services.count { it.isEnabled } } }
     val totalCount by remember { derivedStateOf { services.size } }
 
-    fun loadServices() {
-        scope.launch {
-            loading = true
-            val enabledResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
-            val enabledList = enabledResult.output
-                .split(":")
-                .filter { it.contains("/") }
-                .map { it.trim() }
-                .toSet()
-
-            val dumpResult = CommandExecutor.execute(
-                "pm query-services --components -a android.accessibilityservice.AccessibilityService"
-            )
-            val allComponents = dumpResult.output.lines()
-                .map { it.trim() }
-                .filter { it.contains("/") }
-
-            services.clear()
-            allComponents.forEach { component ->
-                val parts = component.split("/")
-                if (parts.size == 2) {
-                    val pkg = parts[0]
-                    val svcClass = parts[1]
-                    val fullComponent = "$pkg/$svcClass"
-                    val label = try {
-                        val appInfo = pm.getApplicationInfo(pkg, 0)
-                        pm.getApplicationLabel(appInfo).toString()
-                    } catch (_: Exception) {
-                        pkg.substringAfterLast(".")
-                    }
-                    services.add(
-                        AccessibilityServiceInfo(
-                            label = label,
-                            packageName = pkg,
-                            serviceName = svcClass,
-                            isEnabled = enabledList.contains(fullComponent),
-                            isRunning = enabledList.contains(fullComponent)
-                        )
-                    )
-                }
-            }
-            loading = false
-        }
-    }
-
-    fun toggleService(service: AccessibilityServiceInfo, enable: Boolean) {
-        scope.launch {
-            CommandExecutor.execute("settings put secure accessibility_enabled 1")
-            val currentResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
-            val currentList = currentResult.output
-                .split(":")
-                .filter { it.contains("/") }
-                .map { it.trim() }
-                .toMutableList()
-
-            if (enable) {
-                if (!currentList.contains(service.componentName)) {
-                    currentList.add(service.componentName)
-                }
-            } else {
-                currentList.remove(service.componentName)
-            }
-
-            val newValue = currentList.joinToString(":")
-            CommandExecutor.execute("settings put secure enabled_accessibility_services \"$newValue\"")
-            loadServices()
-        }
-    }
-
-    // Reload when service connects
     LaunchedEffect(svcConnected) {
         if (svcConnected) {
-            loadServices()
+            viewModel.loadServices()
         }
     }
 
@@ -209,7 +133,7 @@ fun AccessibilityScreen(shizukuManager: ShizukuManager) {
                 items(filteredServices, key = { it.componentName }) { service ->
                     ServiceCard(
                         service = service,
-                        onToggle = { enabled -> toggleService(service, enabled) }
+                        onToggle = { enabled -> viewModel.toggleService(service, enabled) }
                     )
                 }
             }
@@ -238,7 +162,7 @@ private fun StatCard(
 
 @Composable
 private fun ServiceCard(
-    service: AccessibilityServiceInfo,
+    service: com.hyperdeck.data.model.AccessibilityServiceInfo,
     onToggle: (Boolean) -> Unit
 ) {
     val borderColor = if (service.isEnabled) AccessibilityRunning else AccessibilityStopped

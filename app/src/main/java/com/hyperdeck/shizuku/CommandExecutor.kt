@@ -57,4 +57,10 @@ object CommandExecutor {
             CommandResult(-1, "", e.message ?: "Unknown error")
         }
     }
+
+    fun cancel() {
+        try {
+            serviceProvider?.invoke()?.cancel()
+        } catch (_: Exception) {}
+    }
 }

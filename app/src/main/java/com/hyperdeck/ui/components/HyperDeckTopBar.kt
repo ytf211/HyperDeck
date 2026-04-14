@@ -36,7 +36,10 @@ fun HyperDeckTopBar(
             }
         },
         actions = {
-            ShizukuStatusDot(shizukuManager = shizukuManager)
+            ShizukuStatusIndicator(
+                shizukuManager = shizukuManager,
+                modifier = Modifier
+            )
         }
     )
 }
