@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.hyperdeck.shizuku.ShizukuManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,6 +17,7 @@ fun HyperDeckTopBar(
     title: String,
     showBack: Boolean = false,
     onBack: () -> Unit = {},
+    shizukuManager: ShizukuManager,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -32,7 +34,7 @@ fun HyperDeckTopBar(
             }
         },
         actions = {
-            ShizukuStatusDot()
+            ShizukuStatusDot(shizukuManager = shizukuManager)
         }
     )
 }

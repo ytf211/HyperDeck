@@ -21,18 +21,20 @@ object CommandExecutor {
             }
     }
 
+    var serviceProvider: (() -> IShellService?)? = null
+
     suspend fun execute(command: String): CommandResult = withContext(Dispatchers.IO) {
-        val service = ShizukuManager.getService()
+        val service = serviceProvider?.invoke()
         if (service == null) {
             return@withContext CommandResult(-1, "", "Shizuku service not connected")
         }
         try {
             val raw = service.execute(command)
             if (raw.startsWith("exit=")) {
-                val firstNewline = raw.indexOf('\n')
-                val codeStr = raw.substring(5, if (firstNewline > 0) firstNewline else raw.length)
+                val newlineIdx = raw.indexOf('\n')
+                val codeStr = if (newlineIdx > 0) raw.substring(5, newlineIdx) else raw.substring(5)
                 val exitCode = codeStr.toIntOrNull() ?: -1
-                val output = if (firstNewline > 0) raw.substring(firstNewline + 1) else ""
+                val output = if (newlineIdx > 0) raw.substring(newlineIdx + 1) else ""
                 CommandResult(exitCode, output, "")
             } else if (raw.startsWith("error: ")) {
                 CommandResult(-1, "", raw.removePrefix("error: "))

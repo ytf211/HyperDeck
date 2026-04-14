@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.components.HyperDeckTopBar
 import com.hyperdeck.ui.settings.AppSettingsScreen
 import com.hyperdeck.ui.shell.ShellScreen
@@ -43,7 +44,7 @@ data class BottomNavItem(
 )
 
 @Composable
-fun HyperDeckNavGraph() {
+fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
@@ -72,7 +73,8 @@ fun HyperDeckNavGraph() {
             HyperDeckTopBar(
                 title = currentTitle,
                 showBack = showBackButton,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                shizukuManager = shizukuManager
             )
         },
         bottomBar = {
@@ -118,7 +120,7 @@ fun HyperDeckNavGraph() {
                 ShellScreen()
             }
             composable<SettingsRoute> {
-                AppSettingsScreen()
+                AppSettingsScreen(shizukuManager = shizukuManager)
             }
             composable<AccessibilityRoute> {
                 AccessibilityScreen()
