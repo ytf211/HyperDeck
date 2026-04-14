@@ -2,8 +2,6 @@ package com.hyperdeck.shizuku
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 object CommandExecutor {
 
@@ -24,17 +22,23 @@ object CommandExecutor {
     }
 
     suspend fun execute(command: String): CommandResult = withContext(Dispatchers.IO) {
-        if (!ShizukuManager.hasPermission()) {
-            return@withContext CommandResult(-1, "", "Shizuku permission not granted")
+        val service = ShizukuManager.getService()
+        if (service == null) {
+            return@withContext CommandResult(-1, "", "Shizuku service not connected")
         }
         try {
-            val process = ProcessBuilder("sh", "-c", command)
-                .redirectErrorStream(false)
-                .start()
-            val stdout = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-            val stderr = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
-            val exitCode = process.waitFor()
-            CommandResult(exitCode, stdout.trim(), stderr.trim())
+            val raw = service.execute(command)
+            if (raw.startsWith("exit=")) {
+                val firstNewline = raw.indexOf('\n')
+                val codeStr = raw.substring(5, if (firstNewline > 0) firstNewline else raw.length)
+                val exitCode = codeStr.toIntOrNull() ?: -1
+                val output = if (firstNewline > 0) raw.substring(firstNewline + 1) else ""
+                CommandResult(exitCode, output, "")
+            } else if (raw.startsWith("error: ")) {
+                CommandResult(-1, "", raw.removePrefix("error: "))
+            } else {
+                CommandResult(0, raw, "")
+            }
         } catch (e: Exception) {
             CommandResult(-1, "", e.message ?: "Unknown error")
         }

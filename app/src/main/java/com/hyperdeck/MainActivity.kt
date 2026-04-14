@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        ShizukuManager.init()
+        ShizukuManager.init(packageName)
 
         setContent {
             HyperDeckTheme {
