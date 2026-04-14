@@ -67,4 +67,17 @@
     <string name="enter_value">Enter Value</string>
     <string name="confirm">OK</string>
     <string name="back">Back</string>
+
+    <!-- Log -->
+    <string name="log_mode">Log Mode</string>
+    <string name="log_enabled">Enable Logging</string>
+    <string name="log_level">Log Level</string>
+    <string name="log_export">Export Log</string>
+    <string name="log_clear">Clear Log</string>
+    <string name="log_empty">No log entries</string>
+    <string name="log_exported">Log exported</string>
+    <string name="log_auto_scroll">Auto Scroll</string>
+    <string name="log_share">Share</string>
+    <string name="log_copy_all">Copy All</string>
+    <string name="log_copied">Copied to clipboard</string>
 </resources>

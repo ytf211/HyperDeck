@@ -1,9 +1,12 @@
 package com.hyperdeck.shizuku
 
+import com.hyperdeck.data.repository.LogRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object CommandExecutor {
+
+    private const val TAG = "Command"
 
     data class CommandResult(
         val exitCode: Int,
@@ -24,13 +27,15 @@ object CommandExecutor {
     var serviceProvider: (() -> IShellService?)? = null
 
     suspend fun execute(command: String): CommandResult = withContext(Dispatchers.IO) {
+        LogRepository.d(TAG, "$ $command")
         val service = serviceProvider?.invoke()
         if (service == null) {
+            LogRepository.e(TAG, "Service not connected, cannot execute")
             return@withContext CommandResult(-1, "", "Shizuku service not connected")
         }
         try {
             val raw = service.execute(command)
-            if (raw.startsWith("exit=")) {
+            val result = if (raw.startsWith("exit=")) {
                 val newlineIdx = raw.indexOf('\n')
                 val codeStr = if (newlineIdx > 0) raw.substring(5, newlineIdx) else raw.substring(5)
                 val exitCode = codeStr.toIntOrNull() ?: -1
@@ -41,7 +46,14 @@ object CommandExecutor {
             } else {
                 CommandResult(0, raw, "")
             }
+            if (result.isSuccess) {
+                LogRepository.d(TAG, "OK (${result.output.length} chars)")
+            } else {
+                LogRepository.w(TAG, "Exit ${result.exitCode}: ${result.error.take(100)}")
+            }
+            result
         } catch (e: Exception) {
+            LogRepository.e(TAG, "Execute failed: ${e.message}")
             CommandResult(-1, "", e.message ?: "Unknown error")
         }
     }

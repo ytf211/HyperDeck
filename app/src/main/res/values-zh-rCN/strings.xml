@@ -67,4 +67,17 @@
     <string name="enter_value">输入数值</string>
     <string name="confirm">确定</string>
     <string name="back">返回</string>
+
+    <!-- Log -->
+    <string name="log_mode">日志模式</string>
+    <string name="log_enabled">启用日志</string>
+    <string name="log_level">日志等级</string>
+    <string name="log_export">导出日志</string>
+    <string name="log_clear">清空日志</string>
+    <string name="log_empty">暂无日志</string>
+    <string name="log_exported">日志已导出</string>
+    <string name="log_auto_scroll">自动滚动</string>
+    <string name="log_share">分享</string>
+    <string name="log_copy_all">复制全部</string>
+    <string name="log_copied">已复制到剪贴板</string>
 </resources>

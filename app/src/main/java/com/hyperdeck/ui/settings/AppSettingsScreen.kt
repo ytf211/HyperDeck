@@ -36,7 +36,7 @@ import com.hyperdeck.ui.theme.ShizukuRed
 import kotlinx.coroutines.launch
 
 @Composable
-fun AppSettingsScreen(shizukuManager: ShizukuManager) {
+fun AppSettingsScreen(shizukuManager: ShizukuManager, onNavigateToLog: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val prefsRepo = remember(context) { PreferencesRepository(context) }
@@ -121,6 +121,22 @@ fun AppSettingsScreen(shizukuManager: ShizukuManager) {
             }
         }
 
+        Card(
+            onClick = onNavigateToLog,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.log_mode), style = MaterialTheme.typography.bodyLarge)
+                Text(">", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
         SectionTitle(stringResource(R.string.about))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -128,7 +144,7 @@ fun AppSettingsScreen(shizukuManager: ShizukuManager) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                InfoRow(stringResource(R.string.version), "0.2.1")
+                InfoRow(stringResource(R.string.version), "0.2.2")
                 Spacer(Modifier.height(8.dp))
                 InfoRow(stringResource(R.string.package_name), "com.hyperdeck")
             }

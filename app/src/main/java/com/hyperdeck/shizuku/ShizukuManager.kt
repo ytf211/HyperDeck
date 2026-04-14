@@ -5,6 +5,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.util.Log
+import com.hyperdeck.data.repository.LogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,10 +18,9 @@ enum class ShizukuStatus {
 class ShizukuManager(private val packageName: String) {
 
     companion object {
-        private const val TAG = "ShizukuManager"
+        private const val TAG = "Shizuku"
     }
 
-    // Observable state flows for UI
     private val _status = MutableStateFlow(ShizukuStatus.NOT_INSTALLED)
     val status: StateFlow<ShizukuStatus> = _status.asStateFlow()
 
@@ -30,16 +30,18 @@ class ShizukuManager(private val packageName: String) {
     private var shellService: IShellService? = null
 
     private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
-        Log.i(TAG, "Binder received")
+        log("Binder received")
         refreshStatus()
-        // Auto-bind service if we have permission
         if (hasPermission()) {
+            log("Has permission, auto-binding service")
             bindService()
+        } else {
+            log("No permission yet")
         }
     }
 
     private val binderDeadListener = Shizuku.OnBinderDeadListener {
-        Log.i(TAG, "Binder dead")
+        log("Binder dead")
         _status.value = ShizukuStatus.DISCONNECTED
         shellService = null
         _serviceConnected.value = false
@@ -48,7 +50,7 @@ class ShizukuManager(private val packageName: String) {
     private val permissionResultListener =
         Shizuku.OnRequestPermissionResultListener { _, grantResult ->
             val granted = grantResult == PackageManager.PERMISSION_GRANTED
-            Log.i(TAG, "Permission result: granted=$granted")
+            log("Permission result: granted=$granted")
             refreshStatus()
             if (granted) {
                 bindService()
@@ -57,15 +59,18 @@ class ShizukuManager(private val packageName: String) {
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            Log.i(TAG, "UserService connected")
+            log("UserService onServiceConnected, binder=${binder != null}")
             if (binder != null && binder.pingBinder()) {
                 shellService = IShellService.Stub.asInterface(binder)
                 _serviceConnected.value = true
+                log("ShellService ready")
+            } else {
+                LogRepository.e(TAG, "Invalid binder received")
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.i(TAG, "UserService disconnected")
+            log("UserService disconnected")
             shellService = null
             _serviceConnected.value = false
         }
@@ -111,16 +116,17 @@ class ShizukuManager(private val packageName: String) {
     fun requestPermission(requestCode: Int = 0) {
         try {
             if (Shizuku.isPreV11()) {
-                Log.w(TAG, "Pre-v11 Shizuku is not supported")
+                LogRepository.w(TAG, "Pre-v11 not supported")
                 return
             }
             if (Shizuku.shouldShowRequestPermissionRationale()) {
-                Log.w(TAG, "User denied permission permanently")
+                LogRepository.w(TAG, "User denied permission permanently")
                 return
             }
+            log("Requesting permission...")
             Shizuku.requestPermission(requestCode)
         } catch (e: Exception) {
-            Log.e(TAG, "Request permission failed", e)
+            LogRepository.e(TAG, "Request permission failed: ${e.message}")
         }
     }
 
@@ -134,13 +140,15 @@ class ShizukuManager(private val packageName: String) {
 
     fun bindService() {
         try {
-            if (Shizuku.getVersion() < 10) {
-                Log.w(TAG, "Requires Shizuku API 10+")
+            val version = Shizuku.getVersion()
+            if (version < 10) {
+                LogRepository.w(TAG, "Requires Shizuku API 10+, got $version")
                 return
             }
+            log("Binding UserService (API $version)...")
             Shizuku.bindUserService(userServiceArgs, serviceConnection)
         } catch (e: Exception) {
-            Log.e(TAG, "Bind service failed", e)
+            LogRepository.e(TAG, "Bind service failed: ${e.message}")
         }
     }
 
@@ -155,10 +163,17 @@ class ShizukuManager(private val packageName: String) {
     fun getService(): IShellService? = shellService
 
     private fun refreshStatus() {
-        _status.value = when {
+        val newStatus = when {
             !isShizukuAvailable() -> ShizukuStatus.NOT_INSTALLED
             hasPermission() -> ShizukuStatus.CONNECTED
             else -> ShizukuStatus.DISCONNECTED
         }
+        log("Status: $newStatus")
+        _status.value = newStatus
+    }
+
+    private fun log(msg: String) {
+        Log.i(TAG, msg)
+        LogRepository.i(TAG, msg)
     }
 }

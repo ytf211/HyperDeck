@@ -27,6 +27,7 @@ import com.hyperdeck.R
 import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.components.HyperDeckTopBar
 import com.hyperdeck.ui.settings.AppSettingsScreen
+import com.hyperdeck.ui.settings.LogScreen
 import com.hyperdeck.ui.shell.ShellScreen
 import com.hyperdeck.ui.tools.ToolsScreen
 import com.hyperdeck.ui.tools.accessibility.AccessibilityScreen
@@ -38,6 +39,7 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable object AccessibilityRoute
 @Serializable object SystemSettingsRoute
+@Serializable object LogRoute
 
 data class BottomNavItem(
     val label: String,
@@ -63,6 +65,7 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     val currentTitle = when {
         navBackStackEntry?.destination?.hasRoute<AccessibilityRoute>() == true -> stringResource(R.string.accessibility_management)
         navBackStackEntry?.destination?.hasRoute<SystemSettingsRoute>() == true -> stringResource(R.string.system_settings)
+        navBackStackEntry?.destination?.hasRoute<LogRoute>() == true -> stringResource(R.string.log_mode)
         else -> stringResource(R.string.app_name)
     }
 
@@ -122,10 +125,16 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
                 ShellScreen()
             }
             composable<SettingsRoute> {
-                AppSettingsScreen(shizukuManager = shizukuManager)
+                AppSettingsScreen(
+                    shizukuManager = shizukuManager,
+                    onNavigateToLog = { navController.navigate(LogRoute) }
+                )
+            }
+            composable<LogRoute> {
+                LogScreen()
             }
             composable<AccessibilityRoute> {
-                AccessibilityScreen()
+                AccessibilityScreen(shizukuManager = shizukuManager)
             }
             composable<SystemSettingsRoute> {
                 SystemSettingsScreen()

@@ -8,12 +8,12 @@ import java.io.InputStreamReader
 
 class ShellService : IShellService.Stub {
 
-    constructor() {
+    constructor() : super() {
         Log.i(TAG, "constructor")
     }
 
     @Keep
-    constructor(context: Context) {
+    constructor(context: Context) : super() {
         Log.i(TAG, "constructor with Context: $context")
     }
 

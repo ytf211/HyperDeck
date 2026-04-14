@@ -2,6 +2,7 @@ package com.hyperdeck.ui.tools.accessibility
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -39,16 +42,19 @@ import androidx.compose.ui.unit.dp
 import com.hyperdeck.R
 import com.hyperdeck.data.model.AccessibilityServiceInfo
 import com.hyperdeck.shizuku.CommandExecutor
+import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.theme.AccessibilityRunning
 import com.hyperdeck.ui.theme.AccessibilityStopped
 import kotlinx.coroutines.launch
 
 @Composable
-fun AccessibilityScreen() {
+fun AccessibilityScreen(shizukuManager: ShizukuManager) {
     val scope = rememberCoroutineScope()
     val services = remember { mutableStateListOf<AccessibilityServiceInfo>() }
     var searchQuery by remember { mutableStateOf("") }
     var showRunningOnly by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    val svcConnected by shizukuManager.serviceConnected.collectAsState()
 
     val filteredServices by remember {
         derivedStateOf {
@@ -67,6 +73,7 @@ fun AccessibilityScreen() {
 
     fun loadServices() {
         scope.launch {
+            loading = true
             val enabledResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
             val enabledList = enabledResult.output
                 .split(":")
@@ -104,13 +111,13 @@ fun AccessibilityScreen() {
                     )
                 }
             }
+            loading = false
         }
     }
 
     fun toggleService(service: AccessibilityServiceInfo, enable: Boolean) {
         scope.launch {
             CommandExecutor.execute("settings put secure accessibility_enabled 1")
-
             val currentResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
             val currentList = currentResult.output
                 .split(":")
@@ -132,14 +139,18 @@ fun AccessibilityScreen() {
         }
     }
 
-    LaunchedEffect(Unit) { loadServices() }
+    // Reload when service connects
+    LaunchedEffect(svcConnected) {
+        if (svcConnected) {
+            loadServices()
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Stats cards
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -150,7 +161,6 @@ fun AccessibilityScreen() {
 
         Spacer(Modifier.height(12.dp))
 
-        // Search & filter
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -178,15 +188,25 @@ fun AccessibilityScreen() {
 
         Spacer(Modifier.height(12.dp))
 
-        // Service list
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(filteredServices, key = { it.componentName }) { service ->
-                ServiceCard(
-                    service = service,
-                    onToggle = { enabled -> toggleService(service, enabled) }
+        if (loading) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (!svcConnected) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.shizuku_disconnected),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(filteredServices, key = { it.componentName }) { service ->
+                    ServiceCard(
+                        service = service,
+                        onToggle = { enabled -> toggleService(service, enabled) }
+                    )
+                }
             }
         }
     }
