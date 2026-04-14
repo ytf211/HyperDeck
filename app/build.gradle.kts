@@ -66,10 +66,6 @@ android {
         aidl = true
         buildConfig = true
     }
-
-    composeCompiler {
-        strongSkipping = true
-    }
 }
 
 dependencies {
