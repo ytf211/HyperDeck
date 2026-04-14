@@ -1,10 +1,12 @@
 name: Build APK
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Create a GitHub Release'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -21,12 +23,30 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --parallel --build-cache --configuration-cache
 
-      - name: Upload APK
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: HyperDeck-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Create Release
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: HyperDeck ${{ steps.version.outputs.tag }}
+          files: app/build/outputs/apk/debug/*.apk
+          generate_release_notes: true
