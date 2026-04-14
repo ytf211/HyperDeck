@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -63,11 +63,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
 import com.hyperdeck.data.model.QuickCommand
-import com.hyperdeck.data.model.ShellEntry
-import com.hyperdeck.ui.theme.TerminalBackgroundDark
-import com.hyperdeck.ui.theme.TerminalBackgroundLight
-import com.hyperdeck.ui.theme.TerminalTextDark
-import com.hyperdeck.ui.theme.TerminalTextLight
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -79,8 +74,9 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
     val quickCommands by viewModel.quickCommands.collectAsStateWithLifecycle()
     val autoScroll by viewModel.autoScroll.collectAsStateWithLifecycle()
 
-    val terminalBackground = if (isSystemInDarkTheme()) TerminalBackgroundDark else TerminalBackgroundLight
-    val terminalTextColor = if (isSystemInDarkTheme()) TerminalTextDark else TerminalTextLight
+    // Terminal always uses dark theme for best readability
+    val terminalBackground = Color(0xFF1A1B1E)
+    val terminalTextColor = Color(0xFFD4D4D4)
 
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()

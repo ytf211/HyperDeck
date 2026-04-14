@@ -48,8 +48,10 @@ import androidx.compose.ui.unit.sp
 import com.hyperdeck.R
 import com.hyperdeck.data.model.LogLevel
 import com.hyperdeck.data.repository.LogRepository
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -62,7 +64,7 @@ fun LogScreen() {
     var showLevelMenu by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    val dateFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.getDefault()) }
 
     val filteredEntries = entries.filter { it.level.priority >= minLevel.priority }
 
@@ -155,7 +157,7 @@ fun LogScreen() {
                 items(filteredEntries, key = { "${it.timestamp}_${it.tag}_${it.message.hashCode()}" }) { entry ->
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)) {
                         Text(
-                            dateFormat.format(Date(entry.timestamp)),
+                            dateFormatter.format(LocalTime.ofInstant(Instant.ofEpochMilli(entry.timestamp), ZoneId.systemDefault())),
                             fontFamily = FontFamily.Monospace, fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -23,8 +23,8 @@ import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -66,7 +66,7 @@ private val categoryColors = listOf(
 )
 
 private fun categoryIcon(name: String): ImageVector = when {
-    name.contains("\u6027\u80FD") || name.contains("Performance") -> Icons.Outlined.Speed
+    name.contains("\u52A8\u753B") || name.contains("Animation") -> Icons.Outlined.Speed
     name.contains("\u663E\u793A") || name.contains("Display") -> Icons.Outlined.BrightnessHigh
     name.contains("\u5F00\u53D1") || name.contains("Developer") -> Icons.Outlined.Code
     else -> Icons.Outlined.Settings
@@ -130,7 +130,7 @@ fun ToolsScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(tools, key = { it.id }) { tool ->
+            items(tools, key = { it.id }, contentType = { "tool_card" }) { tool ->
                 ToolCard(
                     tool = tool,
                     onLongClick = if (tool.isDeletable) {
@@ -168,7 +168,7 @@ private fun ToolCard(
     tool: ToolItem,
     onLongClick: (() -> Unit)? = null
 ) {
-    ElevatedCard(
+    Card(
         onClick = tool.onClick,
         modifier = Modifier
             .fillMaxWidth()
@@ -181,9 +181,9 @@ private fun ToolCard(
                 } else Modifier
             ),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = tool.accentColor.copy(alpha = 0.06f)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = tool.accentColor.copy(alpha = 0.08f)
         )
     ) {
         Column(

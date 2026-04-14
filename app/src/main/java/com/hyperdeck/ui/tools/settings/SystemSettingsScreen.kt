@@ -28,7 +28,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -121,7 +121,7 @@ fun SystemSettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                items(category.items, key = { "${category.category}:${it.title}" }) { item ->
+                items(category.items, key = { "${category.category}:${it.title}" }, contentType = { "settings_item" }) { item ->
                     ReorderableItem(reorderableLazyListState, key = "${category.category}:${item.title}") { isDragging ->
                         SettingsItemCard(
                             item = item,
@@ -200,11 +200,11 @@ private fun SettingsItemCard(
         else -> Icons.Outlined.Edit
     }
 
-    ElevatedCard(
+    Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.elevatedCardColors(
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     ) {
