@@ -61,10 +61,11 @@ fun AccessibilityScreen(shizukuManager: ShizukuManager) {
             services.filter { svc ->
                 val matchesSearch = searchQuery.isBlank() ||
                     svc.label.contains(searchQuery, ignoreCase = true) ||
-                    svc.packageName.contains(searchQuery, ignoreCase = true)
+                    svc.packageName.contains(searchQuery, ignoreCase = true) ||
+                    svc.componentName.contains(searchQuery, ignoreCase = true)
                 val matchesFilter = !showRunningOnly || svc.isEnabled
                 matchesSearch && matchesFilter
-            }
+            }.sortedByDescending { it.isEnabled }
         }
     }
 

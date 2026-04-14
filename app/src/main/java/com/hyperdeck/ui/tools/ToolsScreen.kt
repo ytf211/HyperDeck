@@ -17,20 +17,23 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.hyperdeck.R
+import com.hyperdeck.data.config.SettingsConfigParser
 
 data class ToolItem(
     val id: String,
@@ -41,12 +44,20 @@ data class ToolItem(
     val onClick: () -> Unit
 )
 
+private val categoryColors = listOf(
+    Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF9C27B0),
+    Color(0xFF009688), Color(0xFFE91E63), Color(0xFF795548)
+)
+
 @Composable
 fun ToolsScreen(
     onNavigateToAccessibility: () -> Unit,
-    onNavigateToSystemSettings: () -> Unit
+    onNavigateToCategory: (String) -> Unit
 ) {
-    val tools = listOf(
+    val context = LocalContext.current
+    val categories = remember { SettingsConfigParser.loadFromInternal(context) }
+
+    val tools = mutableListOf(
         ToolItem(
             id = "accessibility",
             title = stringResource(R.string.accessibility_management),
@@ -54,16 +65,21 @@ fun ToolsScreen(
             icon = Icons.Default.Accessibility,
             accentColor = Color(0xFF4CAF50),
             onClick = onNavigateToAccessibility
-        ),
-        ToolItem(
-            id = "system_settings",
-            title = stringResource(R.string.system_settings),
-            description = stringResource(R.string.system_settings_desc),
-            icon = Icons.Default.Tune,
-            accentColor = Color(0xFF2196F3),
-            onClick = onNavigateToSystemSettings
         )
     )
+
+    categories.forEachIndexed { index, cat ->
+        tools.add(
+            ToolItem(
+                id = "cat_${cat.category}",
+                title = cat.category,
+                description = "${cat.items.size} items",
+                icon = Icons.Default.Settings,
+                accentColor = categoryColors[index % categoryColors.size],
+                onClick = { onNavigateToCategory(cat.category) }
+            )
+        )
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -90,9 +106,7 @@ private fun ToolCard(tool: ToolItem) {
         ),
         border = BorderStroke(2.dp, tool.accentColor.copy(alpha = 0.5f))
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     tool.icon,
@@ -101,10 +115,7 @@ private fun ToolCard(tool: ToolItem) {
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    tool.title,
-                    style = MaterialTheme.typography.titleSmall
-                )
+                Text(tool.title, style = MaterialTheme.typography.titleSmall)
             }
             Spacer(Modifier.height(8.dp))
             Text(

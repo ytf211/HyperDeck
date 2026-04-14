@@ -31,6 +31,7 @@
     <string name="battery_info">电池信息</string>
     <string name="screen_resolution">屏幕分辨率</string>
     <string name="system_version">系统版本</string>
+    <string name="quick_commands">快捷命令</string>
 
     <!-- Accessibility -->
     <string name="search_hint">搜索…</string>
@@ -64,6 +65,7 @@
     <string name="cancel">取消</string>
     <string name="add">添加</string>
     <string name="apply">应用</string>
+    <string name="delete">删除</string>
     <string name="enter_value">输入数值</string>
     <string name="confirm">确定</string>
     <string name="back">返回</string>

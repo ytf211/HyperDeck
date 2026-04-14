@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -59,7 +60,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SystemSettingsScreen() {
+fun SystemSettingsScreen(categoryFilter: String? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val categories = remember { mutableStateListOf<SettingsCategory>() }
@@ -69,7 +70,11 @@ fun SystemSettingsScreen() {
     LaunchedEffect(Unit) {
         val loaded = SettingsConfigParser.loadFromInternal(context)
         categories.clear()
-        categories.addAll(loaded)
+        if (categoryFilter != null) {
+            loaded.filter { it.category == categoryFilter }.let { categories.addAll(it) }
+        } else {
+            categories.addAll(loaded)
+        }
     }
 
     Scaffold(
@@ -98,7 +103,20 @@ fun SystemSettingsScreen() {
                 items(category.items, key = { "${category.category}:${it.title}" }) { item ->
                     SettingsItemCard(
                         item = item,
-                        onLongClick = { editingItem = item }
+                        onLongClick = { editingItem = item },
+                        onDelete = {
+                            val catIdx = categories.indexOfFirst { cat -> cat.items.contains(item) }
+                            if (catIdx >= 0) {
+                                val cat = categories[catIdx]
+                                val newItems = cat.items.filter { it != item }
+                                if (newItems.isEmpty()) {
+                                    categories.removeAt(catIdx)
+                                } else {
+                                    categories[catIdx] = cat.copy(items = newItems)
+                                }
+                                SettingsConfigParser.saveToInternal(context, categories)
+                            }
+                        }
                     )
                 }
             }
@@ -149,16 +167,19 @@ fun SystemSettingsScreen() {
 @Composable
 private fun SettingsItemCard(
     item: SettingsItem,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 onClick = {},
-                onLongClick = onLongClick
+                onLongClick = { showMenu = true }
             ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
@@ -166,6 +187,18 @@ private fun SettingsItemCard(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            if (showMenu) {
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.edit_setting)) },
+                        onClick = { showMenu = false; onLongClick() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
+                        onClick = { showMenu = false; onDelete() }
+                    )
+                }
+            }
             Text(item.title, style = MaterialTheme.typography.titleSmall)
             if (item.description.isNotBlank()) {
                 Text(
@@ -211,6 +244,11 @@ private fun ToggleControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                 scope.launch {
                     val cmd = if (newValue) item.command_on else item.command_off
                     CommandExecutor.execute(cmd)
+                    // Re-read actual state
+                    if (item.check_command.isNotBlank()) {
+                        val result = CommandExecutor.execute(item.check_command)
+                        checked = result.output != "null" && result.output.isNotBlank()
+                    }
                 }
             }
         )
@@ -242,6 +280,10 @@ private fun SliderControl(item: SettingsItem, scope: kotlinx.coroutines.Coroutin
                     scope.launch {
                         val cmd = item.command.replace("{value}", value.toString())
                         CommandExecutor.execute(cmd)
+                        if (item.check_command.isNotBlank()) {
+                            val result = CommandExecutor.execute(item.check_command)
+                            result.output.toFloatOrNull()?.let { value = it }
+                        }
                     }
                 },
                 valueRange = item.min..item.max,

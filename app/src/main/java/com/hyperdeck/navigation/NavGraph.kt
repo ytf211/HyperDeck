@@ -11,18 +11,26 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import com.hyperdeck.shizuku.ShizukuStatus
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.res.stringResource
+import androidx.navigation.toRoute
 import com.hyperdeck.R
 import com.hyperdeck.shizuku.ShizukuManager
 import com.hyperdeck.ui.components.HyperDeckTopBar
@@ -38,8 +46,8 @@ import kotlinx.serialization.Serializable
 @Serializable object ShellRoute
 @Serializable object SettingsRoute
 @Serializable object AccessibilityRoute
-@Serializable object SystemSettingsRoute
 @Serializable object LogRoute
+@Serializable data class CategoryRoute(val category: String)
 
 data class BottomNavItem(
     val label: String,
@@ -51,6 +59,18 @@ data class BottomNavItem(
 fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val shizukuStatus by shizukuManager.status.collectAsState()
+
+    // Check Shizuku on start
+    LaunchedEffect(shizukuStatus) {
+        delay(1500) // Wait for binder
+        if (shizukuStatus != ShizukuStatus.CONNECTED) {
+            val msg = if (shizukuStatus == ShizukuStatus.NOT_INSTALLED)
+                "Shizuku not running" else "Shizuku not authorized"
+            snackbarHostState.showSnackbar(msg)
+        }
+    }
 
     val bottomNavItems = listOf(
         BottomNavItem(stringResource(R.string.tab_tools), Icons.Default.Build, ToolsRoute),
@@ -64,7 +84,9 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
 
     val currentTitle = when {
         navBackStackEntry?.destination?.hasRoute<AccessibilityRoute>() == true -> stringResource(R.string.accessibility_management)
-        navBackStackEntry?.destination?.hasRoute<SystemSettingsRoute>() == true -> stringResource(R.string.system_settings)
+        navBackStackEntry?.destination?.hasRoute<CategoryRoute>() == true -> {
+            try { navBackStackEntry?.toRoute<CategoryRoute>()?.category ?: "" } catch (_: Exception) { "" }
+        }
         navBackStackEntry?.destination?.hasRoute<LogRoute>() == true -> stringResource(R.string.log_mode)
         else -> stringResource(R.string.app_name)
     }
@@ -74,6 +96,7 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     } ?: false
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             HyperDeckTopBar(
                 title = currentTitle,
@@ -118,7 +141,7 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
             composable<ToolsRoute> {
                 ToolsScreen(
                     onNavigateToAccessibility = { navController.navigate(AccessibilityRoute) },
-                    onNavigateToSystemSettings = { navController.navigate(SystemSettingsRoute) }
+                    onNavigateToCategory = { cat -> navController.navigate(CategoryRoute(cat)) }
                 )
             }
             composable<ShellRoute> {
@@ -136,8 +159,9 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
             composable<AccessibilityRoute> {
                 AccessibilityScreen(shizukuManager = shizukuManager)
             }
-            composable<SystemSettingsRoute> {
-                SystemSettingsScreen()
+            composable<CategoryRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<CategoryRoute>()
+                SystemSettingsScreen(categoryFilter = route.category)
             }
         }
     }

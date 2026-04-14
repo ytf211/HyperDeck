@@ -22,8 +22,8 @@ android {
         applicationId = "com.hyperdeck"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.2"
+        versionCode = 4
+        versionName = "0.2.3"
     }
 
     buildTypes {
