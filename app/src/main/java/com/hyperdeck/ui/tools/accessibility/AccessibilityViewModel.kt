@@ -73,6 +73,13 @@ class AccessibilityViewModel(application: Application) : AndroidViewModel(applic
 
     fun toggleService(service: AccessibilityServiceInfo, enable: Boolean) {
         viewModelScope.launch {
+            // Optimistic UI update
+            _services.value = _services.value.map {
+                if (it.componentName == service.componentName) {
+                    it.copy(isEnabled = enable, isRunning = enable)
+                } else it
+            }
+
             CommandExecutor.execute("settings put secure accessibility_enabled 1")
             val currentResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
             val currentList = currentResult.output
@@ -91,7 +98,20 @@ class AccessibilityViewModel(application: Application) : AndroidViewModel(applic
 
             val newValue = currentList.joinToString(":")
             CommandExecutor.execute("settings put secure enabled_accessibility_services \"$newValue\"")
-            loadServices()
+
+            // Verify actual state (lightweight: only read enabled list, don't re-query pm)
+            val verifyResult = CommandExecutor.execute("settings get secure enabled_accessibility_services")
+            val enabledSet = verifyResult.output
+                .split(":")
+                .filter { it.contains("/") }
+                .map { it.trim() }
+                .toSet()
+            _services.value = _services.value.map {
+                it.copy(
+                    isEnabled = enabledSet.contains(it.componentName),
+                    isRunning = enabledSet.contains(it.componentName)
+                )
+            }
         }
     }
 }

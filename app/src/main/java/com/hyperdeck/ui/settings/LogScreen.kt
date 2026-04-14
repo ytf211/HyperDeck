@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,7 +69,9 @@ fun LogScreen() {
     val listState = rememberLazyListState()
     val dateFormatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.getDefault()) }
 
-    val filteredEntries = entries.filter { it.level.priority >= minLevel.priority }
+    val filteredEntries by remember(entries, minLevel) {
+        derivedStateOf { entries.filter { it.level.priority >= minLevel.priority } }
+    }
 
     LaunchedEffect(filteredEntries.size, autoScroll) {
         if (autoScroll && filteredEntries.isNotEmpty()) {
