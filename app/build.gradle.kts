@@ -38,6 +38,15 @@ android {
         }
     }
 
+    // ABI splits only for release builds
+    androidComponents {
+        beforeVariants { variantBuilder ->
+            if (variantBuilder.buildType == "release") {
+                variantBuilder.enableAndroidTest = false
+            }
+        }
+    }
+
     splits {
         abi {
             isEnable = true
@@ -55,9 +64,6 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-            freeCompilerArgs.addAll(
-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-            )
         }
     }
 
