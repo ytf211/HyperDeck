@@ -83,8 +83,10 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
     val listState = rememberLazyListState()
 
     var showCommandSheet by remember { mutableStateOf(false) }
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showQuickCommandDialog by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var quickCommandAction by remember { mutableStateOf<QuickCommand?>(null) }
+    var editingCommand by remember { mutableStateOf<QuickCommand?>(null) }
     var deletingCommand by remember { mutableStateOf<QuickCommand?>(null) }
 
     LaunchedEffect(entries.size, autoScroll) {
@@ -320,7 +322,10 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                         stringResource(R.string.quick_commands),
                         style = MaterialTheme.typography.titleMedium
                     )
-                    IconButton(onClick = { showAddDialog = true }) {
+                    IconButton(onClick = {
+                        editingCommand = null
+                        showQuickCommandDialog = true
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add))
                     }
                 }
@@ -328,10 +333,7 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                 quickCommands.forEach { qc ->
                     FilterChip(
                         selected = false,
-                        onClick = {
-                            viewModel.executeCommand(qc.command)
-                            showCommandSheet = false
-                        },
+                        onClick = {},
                         label = { Text(qc.label) },
                         modifier = Modifier
                             .padding(end = 8.dp, bottom = 4.dp)
@@ -341,7 +343,7 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                                     showCommandSheet = false
                                 },
                                 onLongClick = {
-                                    deletingCommand = qc
+                                    quickCommandAction = qc
                                 }
                             )
                     )
@@ -350,42 +352,118 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
         }
     }
 
-    // Add quick command dialog
-    if (showAddDialog) {
-        var label by remember { mutableStateOf("") }
-        var cmd by remember { mutableStateOf("") }
+    quickCommandAction?.let { quickCommand ->
         AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text(stringResource(R.string.quick_commands)) },
+            onDismissRequest = { quickCommandAction = null },
+            title = { Text(quickCommand.label) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = label,
-                        onValueChange = { label = it },
-                        label = { Text(stringResource(R.string.title_label)) }
-                    )
-                    OutlinedTextField(
-                        value = cmd,
-                        onValueChange = { cmd = it },
-                        label = { Text(stringResource(R.string.command_label)) }
-                    )
-                }
+                Text(quickCommand.command)
             },
             confirmButton = {
-                TextButton(onClick = {
-                    if (label.isNotBlank() && cmd.isNotBlank()) {
-                        viewModel.addQuickCommand(label, cmd)
-                        showAddDialog = false
+                Row {
+                    TextButton(onClick = {
+                        editingCommand = quickCommand
+                        quickCommandAction = null
+                        showQuickCommandDialog = true
+                    }) {
+                        Text(stringResource(R.string.edit))
                     }
-                }) {
-                    Text(stringResource(R.string.add))
+                    TextButton(onClick = {
+                        deletingCommand = quickCommand
+                        quickCommandAction = null
+                    }) {
+                        Text(
+                            stringResource(R.string.delete),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    TextButton(onClick = { quickCommandAction = null }) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+            dismissButton = null
+        )
+    }
+
+    // Add/edit quick command dialog
+    if (showQuickCommandDialog) {
+        QuickCommandDialog(
+            title = if (editingCommand == null) {
+                stringResource(R.string.quick_commands)
+            } else {
+                stringResource(R.string.edit_quick_command)
+            },
+            confirmLabel = if (editingCommand == null) {
+                stringResource(R.string.add)
+            } else {
+                stringResource(R.string.save)
+            },
+            initialLabel = editingCommand?.label.orEmpty(),
+            initialCommand = editingCommand?.command.orEmpty(),
+            onDismiss = {
+                editingCommand = null
+                showQuickCommandDialog = false
+            },
+            onConfirm = { label, command ->
+                if (editingCommand == null) {
+                    viewModel.addQuickCommand(label, command)
+                } else {
+                    viewModel.updateQuickCommand(
+                        id = editingCommand!!.id,
+                        label = label,
+                        command = command
+                    )
                 }
+                editingCommand = null
+                showQuickCommandDialog = false
             }
         )
     }
+}
+
+@Composable
+private fun QuickCommandDialog(
+    title: String,
+    confirmLabel: String,
+    initialLabel: String,
+    initialCommand: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var label by remember(initialLabel) { mutableStateOf(initialLabel) }
+    var cmd by remember(initialCommand) { mutableStateOf(initialCommand) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text(stringResource(R.string.title_label)) }
+                )
+                OutlinedTextField(
+                    value = cmd,
+                    onValueChange = { cmd = it },
+                    label = { Text(stringResource(R.string.command_label)) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (label.isNotBlank() && cmd.isNotBlank()) {
+                    onConfirm(label, cmd)
+                }
+            }) {
+                Text(confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }

@@ -129,6 +129,23 @@ class ShellViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateQuickCommand(id: String, label: String, command: String) {
+        viewModelScope.launch {
+            val updated = quickCommands.value
+                .map { quickCommand ->
+                    if (quickCommand.id == id) {
+                        quickCommand.copy(label = label, command = command)
+                    } else {
+                        quickCommand
+                    }
+                }
+                .mapIndexed { index, quickCommand ->
+                    quickCommand.copy(order = index)
+                }
+            prefsRepo.setQuickCommands(updated)
+        }
+    }
+
     fun removeQuickCommand(id: String) {
         viewModelScope.launch {
             val updated = quickCommands.value.filter { it.id != id }

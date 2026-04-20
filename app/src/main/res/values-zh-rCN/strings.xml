@@ -88,6 +88,8 @@
     <string name="save">保存</string>
     <string name="cancel">取消</string>
     <string name="add">添加</string>
+    <string name="edit">编辑</string>
+    <string name="edit_quick_command">编辑快捷命令</string>
     <string name="apply">应用</string>
     <string name="delete">删除</string>
     <string name="enter_value">输入数值</string>
