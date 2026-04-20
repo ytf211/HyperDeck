@@ -188,13 +188,14 @@ fun AppSettingsScreen(
                     "en" -> 2
                     else -> 0
                 }
+                val revealSurfaceColor = MaterialTheme.colorScheme.surface
                 TransitionChoiceRow(
                     options = languageOptions,
                     selectedIndex = selectedLanguageIndex,
                     onSelected = { index, origin ->
                         viewModel.startLanguageTransition(
                             origin = origin,
-                            overlayColor = MaterialTheme.colorScheme.surface,
+                            overlayColor = revealSurfaceColor,
                             languageTag = when (index) {
                                 0 -> null
                                 1 -> "zh-CN"
