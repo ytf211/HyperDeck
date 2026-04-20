@@ -125,19 +125,52 @@ class SystemSettingsViewModel(application: Application) : AndroidViewModel(appli
 
     companion object {
         private val whitespaceRegex = "\\s+".toRegex()
+        private val settingsPutRegex =
+            Regex("""^\s*(?:TIMEOUT=\S+\s+)?settings\s+put\s+(\S+)\s+(\S+)\s+(.+?)\s*$""")
+
+        private data class DerivedToggleBinding(
+            val checkCommand: String,
+            val onValue: String,
+            val offValue: String
+        )
 
         fun resolveToggleState(item: SettingsItem, output: String): Boolean {
-            return when (item.state_match_mode) {
+            val explicitState = when (item.state_match_mode) {
                 "exact" -> resolveExactToggleState(item, output)
-                else -> parseDefaultToggleState(output)
+                else -> null
+            }
+            if (explicitState != null) {
+                return explicitState
+            }
+
+            val derivedBinding = deriveToggleBinding(item)
+            if (derivedBinding != null) {
+                val normalizedOutput = normalizeStateValue(output)
+                val normalizedOn = normalizeStateValue(derivedBinding.onValue)
+                val normalizedOff = normalizeStateValue(derivedBinding.offValue)
+
+                return when (normalizedOutput) {
+                    normalizedOn -> true
+                    normalizedOff -> false
+                    else -> false
+                }
+            }
+
+            return parseDefaultToggleState(output)
+        }
+
+        fun getToggleCheckCommand(item: SettingsItem): String {
+            return item.check_command.ifBlank {
+                deriveToggleBinding(item)?.checkCommand.orEmpty()
             }
         }
 
         fun normalizeStateValue(value: String): String {
-            return value.trim().replace(whitespaceRegex, "")
+            return stripWrappingQuotes(value.trim())
+                .replace(whitespaceRegex, "")
         }
 
-        private fun resolveExactToggleState(item: SettingsItem, output: String): Boolean {
+        private fun resolveExactToggleState(item: SettingsItem, output: String): Boolean? {
             val normalizedOutput = normalizeStateValue(output)
             val normalizedOn = item.state_on_value
                 .takeIf { it.isNotBlank() }
@@ -149,7 +182,43 @@ class SystemSettingsViewModel(application: Application) : AndroidViewModel(appli
             return when {
                 normalizedOn != null && normalizedOutput == normalizedOn -> true
                 normalizedOff != null && normalizedOutput == normalizedOff -> false
+                normalizedOn == null && normalizedOff == null -> null
                 else -> false
+            }
+        }
+
+        private fun deriveToggleBinding(item: SettingsItem): DerivedToggleBinding? {
+            val onCommand = parseSettingsPutCommand(item.command_on) ?: return null
+            val offCommand = parseSettingsPutCommand(item.command_off) ?: return null
+            if (onCommand.namespace != offCommand.namespace || onCommand.key != offCommand.key) {
+                return null
+            }
+
+            return DerivedToggleBinding(
+                checkCommand = "settings get ${onCommand.namespace} ${onCommand.key}",
+                onValue = onCommand.value,
+                offValue = offCommand.value
+            )
+        }
+
+        private fun parseSettingsPutCommand(command: String): ParsedSettingsPutCommand? {
+            val match = settingsPutRegex.matchEntire(command) ?: return null
+            return ParsedSettingsPutCommand(
+                namespace = match.groupValues[1],
+                key = match.groupValues[2],
+                value = stripWrappingQuotes(match.groupValues[3].trim())
+            )
+        }
+
+        private fun stripWrappingQuotes(value: String): String {
+            return if (
+                value.length >= 2 &&
+                ((value.startsWith('"') && value.endsWith('"')) ||
+                    (value.startsWith('\'') && value.endsWith('\'')))
+            ) {
+                value.substring(1, value.length - 1)
+            } else {
+                value
             }
         }
 
@@ -157,5 +226,11 @@ class SystemSettingsViewModel(application: Application) : AndroidViewModel(appli
             val trimmed = output.trim()
             return trimmed != "null" && trimmed != "0" && trimmed.isNotBlank()
         }
+
+        private data class ParsedSettingsPutCommand(
+            val namespace: String,
+            val key: String,
+            val value: String
+        )
     }
 }

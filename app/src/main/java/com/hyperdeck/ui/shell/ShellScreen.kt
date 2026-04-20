@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +39,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -331,21 +331,15 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                 }
                 Spacer(Modifier.height(8.dp))
                 quickCommands.forEach { qc ->
-                    FilterChip(
-                        selected = false,
-                        onClick = {},
-                        label = { Text(qc.label) },
-                        modifier = Modifier
-                            .padding(end = 8.dp, bottom = 4.dp)
-                            .combinedClickable(
-                                onClick = {
-                                    viewModel.executeCommand(qc.command)
-                                    showCommandSheet = false
-                                },
-                                onLongClick = {
-                                    quickCommandAction = qc
-                                }
-                            )
+                    QuickCommandItem(
+                        command = qc,
+                        onClick = {
+                            viewModel.executeCommand(qc.command)
+                            showCommandSheet = false
+                        },
+                        onLongClick = {
+                            quickCommandAction = qc
+                        }
                     )
                 }
             }
@@ -418,6 +412,31 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                 editingCommand = null
                 showQuickCommandDialog = false
             }
+        )
+    }
+}
+
+@Composable
+private fun QuickCommandItem(
+    command: QuickCommand,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(bottom = 8.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Text(
+            text = command.label,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

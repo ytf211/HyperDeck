@@ -270,18 +270,21 @@ private fun SettingsItemCard(
 
 @Composable
 private fun ToggleControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
+    val resolvedCheckCommand = remember(item.check_command, item.command_on, item.command_off) {
+        SystemSettingsViewModel.getToggleCheckCommand(item)
+    }
     var checked by remember { mutableStateOf(false) }
-    var loaded by remember { mutableStateOf(item.check_command.isBlank()) }
+    var loaded by remember(resolvedCheckCommand) { mutableStateOf(resolvedCheckCommand.isBlank()) }
     var currentValue by remember { mutableStateOf("") }
     var showCurrentValue by remember { mutableStateOf(false) }
 
     fun refreshState(onLoaded: (() -> Unit)? = null) {
-        if (item.check_command.isBlank()) {
+        if (resolvedCheckCommand.isBlank()) {
             loaded = true
             onLoaded?.invoke()
             return
         }
-        viewModel.executeCommand(item.check_command) { result ->
+        viewModel.executeCommand(resolvedCheckCommand) { result ->
             currentValue = result.fullOutput.trimEnd()
             checked = SystemSettingsViewModel.resolveToggleState(item, result.output)
             loaded = true
@@ -289,7 +292,7 @@ private fun ToggleControl(item: SettingsItem, viewModel: SystemSettingsViewModel
         }
     }
 
-    LaunchedEffect(item.check_command) {
+    LaunchedEffect(resolvedCheckCommand, item.command_on, item.command_off) {
         refreshState()
     }
 
@@ -311,7 +314,7 @@ private fun ToggleControl(item: SettingsItem, viewModel: SystemSettingsViewModel
             )
         }
 
-        if (item.check_command.isNotBlank()) {
+        if (resolvedCheckCommand.isNotBlank()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End

@@ -79,12 +79,8 @@
         "title": "触控预启动优化",
         "description": "切换 touch_prestart_opt_config 的黑名单配置",
         "type": "toggle",
-        "command_on": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[disable_all_package]}\"",
-        "command_off": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[com.android.camera]}\"",
-        "check_command": "settings get system touch_prestart_opt_config",
-        "state_match_mode": "exact",
-        "state_on_value": "{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[disable_all_package]}",
-        "state_off_value": "{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[com.android.camera]}"
+        "command_on": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[com.android.camera]}\"",
+        "command_off": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[disable_all_package]}\""
       }
     ]
   }

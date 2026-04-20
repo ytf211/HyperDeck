@@ -17,8 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v5
@@ -80,14 +78,14 @@ jobs:
 
       - name: Upload Debug APK
         if: ${{ !inputs.release }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: HyperDeck-debug
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload Release APKs
         if: ${{ inputs.release }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: HyperDeck-release
           path: app/build/outputs/apk/release/*.apk
