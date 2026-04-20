@@ -4,10 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hyperdeck.HyperDeckApp
+import com.hyperdeck.R
 import com.hyperdeck.data.model.QuickCommand
 import com.hyperdeck.data.model.ShellEntry
+import com.hyperdeck.data.model.ShellEntryStatus
 import com.hyperdeck.shizuku.CommandExecutor
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,14 +45,52 @@ class ShellViewModel(application: Application) : AndroidViewModel(application) {
         _commandHistory.add(command)
         historyIndex = _commandHistory.size
         currentJob = viewModelScope.launch {
+            val entryId = UUID.randomUUID().toString()
             _isRunning.value = true
-            val result = CommandExecutor.execute(command)
             _entries.value = _entries.value + ShellEntry(
+                id = entryId,
                 command = command,
-                output = result.fullOutput.ifBlank { "(no output)" },
-                isError = !result.isSuccess
+                output = "",
+                status = ShellEntryStatus.PENDING
             )
-            _isRunning.value = false
+
+            val runningJob = launch {
+                delay(3_000)
+                updateEntry(entryId) { entry ->
+                    if (entry.status == ShellEntryStatus.PENDING) {
+                        entry.copy(status = ShellEntryStatus.RUNNING)
+                    } else {
+                        entry
+                    }
+                }
+            }
+
+            try {
+                val result = CommandExecutor.execute(command)
+                runningJob.cancel()
+                updateEntry(entryId) {
+                    it.copy(
+                        output = result.fullOutput.ifBlank { "(no output)" },
+                        status = if (result.isSuccess) {
+                            ShellEntryStatus.COMPLETED
+                        } else {
+                            ShellEntryStatus.FAILED
+                        }
+                    )
+                }
+            } catch (e: CancellationException) {
+                runningJob.cancel()
+                updateEntry(entryId) {
+                    it.copy(
+                        output = getApplication<Application>().getString(R.string.shell_cancelled),
+                        status = ShellEntryStatus.CANCELLED
+                    )
+                }
+                throw e
+            } finally {
+                _isRunning.value = false
+                currentJob = null
+            }
         }
     }
 
@@ -97,5 +139,11 @@ class ShellViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getAllText(): String {
         return _entries.value.joinToString("\n\n") { "$ ${it.command}\n${it.output}" }
+    }
+
+    private fun updateEntry(entryId: String, transform: (ShellEntry) -> ShellEntry) {
+        _entries.value = _entries.value.map { entry ->
+            if (entry.id == entryId) transform(entry) else entry
+        }
     }
 }

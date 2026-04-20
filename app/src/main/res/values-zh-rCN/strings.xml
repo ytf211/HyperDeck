@@ -43,6 +43,8 @@
     <string name="delete_quick_command">确定删除此快捷命令？</string>
     <string name="confirm_clear">清除记录</string>
     <string name="confirm_clear_message">确定清除所有 Shell 记录？</string>
+    <string name="shell_running">运行中…</string>
+    <string name="shell_cancelled">命令已取消</string>
 
     <!-- Accessibility -->
     <string name="search_hint">搜索…</string>

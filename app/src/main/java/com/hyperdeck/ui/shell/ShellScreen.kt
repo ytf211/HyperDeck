@@ -164,7 +164,7 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                             )
                         }
                     }
-                    items(entries) { entry ->
+                    items(entries, key = { it.id }) { entry ->
                         SelectionContainer {
                             Column {
                                 Text(
@@ -173,13 +173,31 @@ fun ShellScreen(viewModel: ShellViewModel = viewModel()) {
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 13.sp
                                 )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    entry.output,
-                                    color = if (entry.isError) MaterialTheme.colorScheme.error else terminalTextColor,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 13.sp
-                                )
+                                when {
+                                    entry.isRunning -> {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            stringResource(R.string.shell_running),
+                                            color = terminalTextColor.copy(alpha = 0.72f),
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+
+                                    entry.output.isNotBlank() -> {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            entry.output,
+                                            color = if (entry.isError) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                terminalTextColor
+                                            },
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
                             }
                         }
                         Spacer(Modifier.height(8.dp))

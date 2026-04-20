@@ -43,6 +43,8 @@
     <string name="confirm_clear_message">Are you sure you want to clear all shell history?</string>
     <string name="stop">Stop</string>
     <string name="delete_quick_command">Delete this quick command?</string>
+    <string name="shell_running">Running…</string>
+    <string name="shell_cancelled">Command cancelled</string>
 
     <!-- Accessibility -->
     <string name="search_hint">Search…</string>
