@@ -12,17 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,8 +43,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.BuildConfig
 import com.hyperdeck.R
 import com.hyperdeck.shizuku.ShizukuStatus
+import com.hyperdeck.ui.theme.resolveHyperDeckColorScheme
 import com.hyperdeck.ui.theme.ShizukuGreen
 import com.hyperdeck.ui.theme.ShizukuRed
+import androidx.compose.foundation.isSystemInDarkTheme
 
 @Composable
 fun AppSettingsScreen(
@@ -54,6 +60,7 @@ fun AppSettingsScreen(
     val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     var restoreSummary by remember { mutableStateOf<String?>(null) }
+    val systemDarkTheme = isSystemInDarkTheme()
 
     val uid = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getUid() else -1
     val apiVersion = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getApiVersion() else -1
@@ -181,29 +188,22 @@ fun AppSettingsScreen(
                     "en" -> 2
                     else -> 0
                 }
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    languageOptions.forEachIndexed { index, label ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = languageOptions.size
-                            ),
-                            onClick = {
-                                viewModel.setAppLanguage(
-                                    when (index) {
-                                        0 -> null
-                                        1 -> "zh-CN"
-                                        2 -> "en"
-                                        else -> null
-                                    }
-                                )
-                            },
-                            selected = index == selectedLanguageIndex
-                        ) {
-                            Text(label)
-                        }
+                TransitionChoiceRow(
+                    options = languageOptions,
+                    selectedIndex = selectedLanguageIndex,
+                    onSelected = { index, origin ->
+                        viewModel.startLanguageTransition(
+                            origin = origin,
+                            overlayColor = MaterialTheme.colorScheme.surface,
+                            languageTag = when (index) {
+                                0 -> null
+                                1 -> "zh-CN"
+                                2 -> "en"
+                                else -> null
+                            }
+                        )
                     }
-                }
+                )
 
                 Spacer(Modifier.height(16.dp))
                 Text(stringResource(R.string.dark_mode), style = MaterialTheme.typography.bodyLarge)
@@ -218,26 +218,28 @@ fun AppSettingsScreen(
                     false -> 1
                     true -> 2
                 }
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    options.forEachIndexed { index, label ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                            onClick = {
-                                viewModel.setDarkMode(
-                                    when (index) {
-                                        0 -> null
-                                        1 -> false
-                                        2 -> true
-                                        else -> null
-                                    }
-                                )
-                            },
-                            selected = index == selectedIndex
-                        ) {
-                            Text(label)
+                TransitionChoiceRow(
+                    options = options,
+                    selectedIndex = selectedIndex,
+                    onSelected = { index, origin ->
+                        val targetPreference = when (index) {
+                            0 -> null
+                            1 -> false
+                            2 -> true
+                            else -> null
                         }
+                        val targetDarkTheme = targetPreference ?: systemDarkTheme
+                        viewModel.startThemeTransition(
+                            origin = origin,
+                            overlayColor = resolveHyperDeckColorScheme(
+                                context = context,
+                                darkTheme = targetDarkTheme,
+                                dynamicColor = true
+                            ).surface,
+                            enabled = targetPreference
+                        )
                     }
-                }
+                )
             }
         }
 
@@ -331,6 +333,67 @@ fun AppSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 InfoRow(stringResource(R.string.package_name), BuildConfig.APPLICATION_ID)
             }
+        }
+    }
+}
+
+@Composable
+private fun TransitionChoiceRow(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelected: (index: Int, origin: Offset) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEachIndexed { index, label ->
+            TransitionChoiceButton(
+                label = label,
+                selected = index == selectedIndex,
+                modifier = Modifier.weight(1f),
+                onSelected = { origin -> onSelected(index, origin) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransitionChoiceButton(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onSelected: (origin: Offset) -> Unit
+) {
+    var originInRoot by remember { mutableStateOf(Offset.Zero) }
+
+    Surface(
+        modifier = modifier
+            .onGloballyPositioned { originInRoot = it.positionInRoot() }
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    onSelected(originInRoot + offset)
+                }
+            },
+        shape = RoundedCornerShape(18.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        contentColor = if (selected) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(label)
         }
     }
 }

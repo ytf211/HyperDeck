@@ -2,9 +2,12 @@ package com.hyperdeck.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
@@ -12,8 +15,16 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.animation.core.AnimationVector1D
+import kotlinx.coroutines.delay
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue80,
@@ -25,21 +36,28 @@ private val LightColorScheme = lightColorScheme(
     secondary = BlueGrey40,
 )
 
+fun resolveHyperDeckColorScheme(
+    context: android.content.Context,
+    darkTheme: Boolean,
+    dynamicColor: Boolean
+): ColorScheme {
+    return when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+}
+
 @Composable
 fun HyperDeckTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val targetColorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-    val colorScheme = rememberAnimatedColorScheme(targetColorScheme)
+    val context = LocalContext.current
+    val colorScheme = resolveHyperDeckColorScheme(context, darkTheme, dynamicColor)
 
     MaterialTheme(
         colorScheme = colorScheme,
@@ -49,165 +67,79 @@ fun HyperDeckTheme(
 }
 
 @Composable
-private fun rememberAnimatedColorScheme(target: ColorScheme): ColorScheme {
-    val animationSpec = tween<androidx.compose.ui.graphics.Color>(
-        durationMillis = 450,
-        easing = FastOutSlowInEasing
-    )
+fun RevealTransitionHost(
+    manager: UiTransitionManager,
+    content: @Composable () -> Unit
+) {
+    val request = manager.activeRequest
+    val radius = remember(request?.token) { Animatable(0f) }
 
-    val primary by animateColorAsState(target.primary, animationSpec, label = "primary")
-    val onPrimary by animateColorAsState(target.onPrimary, animationSpec, label = "onPrimary")
-    val primaryContainer by animateColorAsState(
-        target.primaryContainer,
-        animationSpec,
-        label = "primaryContainer"
-    )
-    val onPrimaryContainer by animateColorAsState(
-        target.onPrimaryContainer,
-        animationSpec,
-        label = "onPrimaryContainer"
-    )
-    val inversePrimary by animateColorAsState(
-        target.inversePrimary,
-        animationSpec,
-        label = "inversePrimary"
-    )
-    val secondary by animateColorAsState(target.secondary, animationSpec, label = "secondary")
-    val onSecondary by animateColorAsState(target.onSecondary, animationSpec, label = "onSecondary")
-    val secondaryContainer by animateColorAsState(
-        target.secondaryContainer,
-        animationSpec,
-        label = "secondaryContainer"
-    )
-    val onSecondaryContainer by animateColorAsState(
-        target.onSecondaryContainer,
-        animationSpec,
-        label = "onSecondaryContainer"
-    )
-    val tertiary by animateColorAsState(target.tertiary, animationSpec, label = "tertiary")
-    val onTertiary by animateColorAsState(target.onTertiary, animationSpec, label = "onTertiary")
-    val tertiaryContainer by animateColorAsState(
-        target.tertiaryContainer,
-        animationSpec,
-        label = "tertiaryContainer"
-    )
-    val onTertiaryContainer by animateColorAsState(
-        target.onTertiaryContainer,
-        animationSpec,
-        label = "onTertiaryContainer"
-    )
-    val background by animateColorAsState(target.background, animationSpec, label = "background")
-    val onBackground by animateColorAsState(target.onBackground, animationSpec, label = "onBackground")
-    val surface by animateColorAsState(target.surface, animationSpec, label = "surface")
-    val onSurface by animateColorAsState(target.onSurface, animationSpec, label = "onSurface")
-    val surfaceVariant by animateColorAsState(
-        target.surfaceVariant,
-        animationSpec,
-        label = "surfaceVariant"
-    )
-    val onSurfaceVariant by animateColorAsState(
-        target.onSurfaceVariant,
-        animationSpec,
-        label = "onSurfaceVariant"
-    )
-    val surfaceTint by animateColorAsState(target.surfaceTint, animationSpec, label = "surfaceTint")
-    val inverseSurface by animateColorAsState(
-        target.inverseSurface,
-        animationSpec,
-        label = "inverseSurface"
-    )
-    val inverseOnSurface by animateColorAsState(
-        target.inverseOnSurface,
-        animationSpec,
-        label = "inverseOnSurface"
-    )
-    val error by animateColorAsState(target.error, animationSpec, label = "error")
-    val onError by animateColorAsState(target.onError, animationSpec, label = "onError")
-    val errorContainer by animateColorAsState(
-        target.errorContainer,
-        animationSpec,
-        label = "errorContainer"
-    )
-    val onErrorContainer by animateColorAsState(
-        target.onErrorContainer,
-        animationSpec,
-        label = "onErrorContainer"
-    )
-    val outline by animateColorAsState(target.outline, animationSpec, label = "outline")
-    val outlineVariant by animateColorAsState(
-        target.outlineVariant,
-        animationSpec,
-        label = "outlineVariant"
-    )
-    val scrim by animateColorAsState(target.scrim, animationSpec, label = "scrim")
-    val surfaceBright by animateColorAsState(
-        target.surfaceBright,
-        animationSpec,
-        label = "surfaceBright"
-    )
-    val surfaceDim by animateColorAsState(target.surfaceDim, animationSpec, label = "surfaceDim")
-    val surfaceContainer by animateColorAsState(
-        target.surfaceContainer,
-        animationSpec,
-        label = "surfaceContainer"
-    )
-    val surfaceContainerHigh by animateColorAsState(
-        target.surfaceContainerHigh,
-        animationSpec,
-        label = "surfaceContainerHigh"
-    )
-    val surfaceContainerHighest by animateColorAsState(
-        target.surfaceContainerHighest,
-        animationSpec,
-        label = "surfaceContainerHighest"
-    )
-    val surfaceContainerLow by animateColorAsState(
-        target.surfaceContainerLow,
-        animationSpec,
-        label = "surfaceContainerLow"
-    )
-    val surfaceContainerLowest by animateColorAsState(
-        target.surfaceContainerLowest,
-        animationSpec,
-        label = "surfaceContainerLowest"
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
 
-    return target.copy(
-        primary = primary,
-        onPrimary = onPrimary,
-        primaryContainer = primaryContainer,
-        onPrimaryContainer = onPrimaryContainer,
-        inversePrimary = inversePrimary,
-        secondary = secondary,
-        onSecondary = onSecondary,
-        secondaryContainer = secondaryContainer,
-        onSecondaryContainer = onSecondaryContainer,
-        tertiary = tertiary,
-        onTertiary = onTertiary,
-        tertiaryContainer = tertiaryContainer,
-        onTertiaryContainer = onTertiaryContainer,
-        background = background,
-        onBackground = onBackground,
-        surface = surface,
-        onSurface = onSurface,
-        surfaceVariant = surfaceVariant,
-        onSurfaceVariant = onSurfaceVariant,
-        surfaceTint = surfaceTint,
-        inverseSurface = inverseSurface,
-        inverseOnSurface = inverseOnSurface,
-        error = error,
-        onError = onError,
-        errorContainer = errorContainer,
-        onErrorContainer = onErrorContainer,
-        outline = outline,
-        outlineVariant = outlineVariant,
-        scrim = scrim,
-        surfaceBright = surfaceBright,
-        surfaceDim = surfaceDim,
-        surfaceContainer = surfaceContainer,
-        surfaceContainerHigh = surfaceContainerHigh,
-        surfaceContainerHighest = surfaceContainerHighest,
-        surfaceContainerLow = surfaceContainerLow,
-        surfaceContainerLowest = surfaceContainerLowest
+        if (request != null) {
+            RevealOverlay(
+                request = request,
+                radius = radius,
+                onFinished = { manager.clear(request.token) }
+            )
+        }
+    }
+}
+
+private suspend fun UiTransitionRequest.apply() {
+    when (this) {
+        is UiTransitionRequest.Language -> applyChange()
+        is UiTransitionRequest.Theme -> applyChange()
+    }
+}
+
+@Composable
+private fun RevealOverlay(
+    request: UiTransitionRequest,
+    radius: Animatable<Float, AnimationVector1D>,
+    onFinished: () -> Unit
+) {
+    val animationSpec = remember {
+        tween<Float>(durationMillis = 520, easing = FastOutSlowInEasing)
+    }
+    val holdDelay = if (request is UiTransitionRequest.Language) 160L else 90L
+    var canvasSize by remember(request.token) { mutableStateOf(Size.Zero) }
+
+    LaunchedEffect(request.token, canvasSize) {
+        if (canvasSize == Size.Zero) return@LaunchedEffect
+        val targetRadius = maxRevealRadius(request.origin, canvasSize)
+        radius.snapTo(0f)
+        radius.animateTo(targetRadius, animationSpec)
+        request.apply()
+        delay(holdDelay)
+        onFinished()
+    }
+
+    Canvas(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        canvasSize = size
+        drawCircle(
+            color = request.overlayColor,
+            radius = radius.value,
+            center = Offset(
+                x = request.origin.x.coerceIn(0f, size.width),
+                y = request.origin.y.coerceIn(0f, size.height)
+            )
+        )
+    }
+}
+
+private fun maxRevealRadius(origin: Offset, size: Size): Float {
+    if (size == Size.Zero) return 0f
+    val corners = listOf(
+        Offset.Zero,
+        Offset(size.width, 0f),
+        Offset(0f, size.height),
+        Offset(size.width, size.height)
     )
+    return corners.maxOf { corner ->
+        kotlin.math.hypot((corner.x - origin.x).toDouble(), (corner.y - origin.y).toDouble()).toFloat()
+    }
 }

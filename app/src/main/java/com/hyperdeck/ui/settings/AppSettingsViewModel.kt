@@ -2,11 +2,14 @@ package com.hyperdeck.ui.settings
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hyperdeck.HyperDeckApp
 import com.hyperdeck.shizuku.ShizukuStatus
+import com.hyperdeck.ui.theme.UiTransitionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +22,7 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
     private val prefsRepo = (application as HyperDeckApp).preferencesRepository
     private val settingsRepo = (application as HyperDeckApp).settingsRepository
     val shizukuManager = (application as HyperDeckApp).shizukuManager
+    private val uiTransitionManager: UiTransitionManager = (application as HyperDeckApp).uiTransitionManager
 
     val darkMode = prefsRepo.darkMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -37,6 +41,26 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
         val locales = LocaleListCompat.forLanguageTags(languageTag.orEmpty())
         AppCompatDelegate.setApplicationLocales(locales)
         _appLanguage.value = currentLanguageTag()
+    }
+
+    fun startThemeTransition(origin: Offset, overlayColor: Color, enabled: Boolean?) {
+        uiTransitionManager.startThemeTransition(
+            origin = origin,
+            overlayColor = overlayColor
+        ) {
+            prefsRepo.setDarkMode(enabled)
+        }
+    }
+
+    fun startLanguageTransition(origin: Offset, overlayColor: Color, languageTag: String?) {
+        uiTransitionManager.startLanguageTransition(
+            origin = origin,
+            overlayColor = overlayColor
+        ) {
+            val locales = LocaleListCompat.forLanguageTags(languageTag.orEmpty())
+            AppCompatDelegate.setApplicationLocales(locales)
+            _appLanguage.value = currentLanguageTag()
+        }
     }
 
     fun exportConfig(onResult: (String) -> Unit) {

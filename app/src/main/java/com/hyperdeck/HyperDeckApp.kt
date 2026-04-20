@@ -5,6 +5,7 @@ import com.hyperdeck.data.repository.PreferencesRepository
 import com.hyperdeck.data.repository.SettingsRepository
 import com.hyperdeck.shizuku.CommandExecutor
 import com.hyperdeck.shizuku.ShizukuManager
+import com.hyperdeck.ui.theme.UiTransitionManager
 
 class HyperDeckApp : Application() {
 
@@ -14,6 +15,7 @@ class HyperDeckApp : Application() {
         private set
     lateinit var shizukuManager: ShizukuManager
         private set
+    val uiTransitionManager = UiTransitionManager()
 
     override fun onCreate() {
         super.onCreate()

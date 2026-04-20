@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.hyperdeck.navigation.HyperDeckNavGraph
 import com.hyperdeck.ui.theme.HyperDeckTheme
+import com.hyperdeck.ui.theme.RevealTransitionHost
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,7 +26,9 @@ class MainActivity : AppCompatActivity() {
             val darkTheme = darkModePref ?: isSystemInDarkTheme()
 
             HyperDeckTheme(darkTheme = darkTheme) {
-                HyperDeckNavGraph(shizukuManager = app.shizukuManager)
+                RevealTransitionHost(manager = app.uiTransitionManager) {
+                    HyperDeckNavGraph(shizukuManager = app.shizukuManager)
+                }
             }
         }
     }
