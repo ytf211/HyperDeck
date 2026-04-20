@@ -70,7 +70,7 @@ class ShellViewModel(application: Application) : AndroidViewModel(application) {
                 runningJob.cancel()
                 updateEntry(entryId) {
                     it.copy(
-                        output = result.fullOutput.ifBlank { "(no output)" },
+                        output = result.fullOutput,
                         status = if (result.isSuccess) {
                             ShellEntryStatus.COMPLETED
                         } else {
@@ -155,7 +155,13 @@ class ShellViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getAllText(): String {
-        return _entries.value.joinToString("\n\n") { "$ ${it.command}\n${it.output}" }
+        return _entries.value.joinToString("\n\n") { entry ->
+            if (entry.output.isBlank()) {
+                "$ ${entry.command}"
+            } else {
+                "$ ${entry.command}\n${entry.output}"
+            }
+        }
     }
 
     private fun updateEntry(entryId: String, transform: (ShellEntry) -> ShellEntry) {
