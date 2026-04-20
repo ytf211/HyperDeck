@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.drawToBitmap
@@ -232,7 +233,7 @@ fun AppSettingsScreen(
                         }
                         viewModel.startThemeTransition(
                             origin = origin,
-                            screenshot = rootView.safeScreenshot(),
+                            overlayColor = MaterialTheme.colorScheme.surface.toArgb(),
                             enabled = targetPreference
                         )
                     }

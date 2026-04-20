@@ -43,8 +43,8 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
         _appLanguage.value = currentLanguageTag()
     }
 
-    fun startThemeTransition(origin: Offset, screenshot: Bitmap, enabled: Boolean?) {
-        uiTransitionManager.startThemeTransition(origin = origin, screenshot = screenshot)
+    fun startThemeTransition(origin: Offset, overlayColor: Int, enabled: Boolean?) {
+        uiTransitionManager.startThemeTransition(origin = origin, overlayColor = overlayColor)
         viewModelScope.launch {
             prefsRepo.setDarkMode(enabled)
         }

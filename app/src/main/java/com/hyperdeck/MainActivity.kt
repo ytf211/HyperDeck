@@ -6,13 +6,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import com.hyperdeck.ui.theme.AttachNativeRevealTransition
 import com.hyperdeck.navigation.HyperDeckNavGraph
 import com.hyperdeck.ui.theme.HyperDeckTheme
-import com.hyperdeck.ui.theme.RevealTransitionHost
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val darkModePref by app.preferencesRepository.darkMode.collectAsState(initial = null)
             val darkTheme = darkModePref ?: isSystemInDarkTheme()
+            val hostView = LocalView.current
 
             DisposableEffect(darkTheme) {
                 WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -39,12 +41,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             HyperDeckTheme(darkTheme = darkTheme) {
-                RevealTransitionHost(
+                AttachNativeRevealTransition(
+                    hostView = hostView,
                     manager = app.uiTransitionManager,
                     activityToken = activityToken
-                ) {
-                    HyperDeckNavGraph(shizukuManager = app.shizukuManager)
-                }
+                )
+                HyperDeckNavGraph(shizukuManager = app.shizukuManager)
             }
         }
     }

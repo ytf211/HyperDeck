@@ -5,11 +5,9 @@ import android.animation.AnimatorListenerAdapter
 import android.os.Build
 import android.view.View
 import android.view.ViewAnimationUtils
-import android.widget.FrameLayout
+import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -17,9 +15,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import kotlin.math.hypot
 
@@ -64,88 +63,79 @@ fun HyperDeckTheme(
 }
 
 @Composable
-fun RevealTransitionHost(
+fun AttachNativeRevealTransition(
+    hostView: View,
     manager: UiTransitionManager,
-    activityToken: Int,
-    content: @Composable () -> Unit
+    activityToken: Int
 ) {
     val request = manager.activeRequest
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        content()
-
-        if (request != null && activityToken >= request.minActivityToken) {
-            NativeCircularRevealOverlay(
-                request = request,
-                onFinished = { manager.clear(request.token) }
+    LaunchedEffect(request?.token, activityToken) {
+        val transition = manager.consumeForActivity(activityToken) ?: return@LaunchedEffect
+        hostView.post {
+            playNativeReveal(
+                hostView = hostView,
+                request = transition,
+                onFinished = { manager.clear(transition.token) }
             )
         }
     }
 }
 
-@Composable
-private fun NativeCircularRevealOverlay(
+private fun playNativeReveal(
+    hostView: View,
     request: UiTransitionRequest,
     onFinished: () -> Unit
 ) {
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { context ->
-            FrameLayout(context).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-                val imageView = ImageView(context).apply {
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
-                    scaleType = ImageView.ScaleType.FIT_XY
-                    setImageBitmap(request.screenshot)
-                }
-                addView(imageView)
-            }
-        },
-        update = { container ->
-            val imageView = container.getChildAt(0) as ImageView
-            imageView.setImageBitmap(request.screenshot)
+    val overlayHost = hostView.rootView as? ViewGroup
+    if (overlayHost == null || overlayHost.width == 0 || overlayHost.height == 0) {
+        onFinished()
+        return
+    }
 
-            if (container.tag == request.token) {
-                return@AndroidView
-            }
-
-            container.tag = request.token
-            container.post {
-                val centerX = request.origin.x.coerceIn(0f, container.width.toFloat()).toInt()
-                val centerY = request.origin.y.coerceIn(0f, container.height.toFloat()).toInt()
-                val finalRadius = listOf(
-                    hypot(centerX.toDouble(), centerY.toDouble()),
-                    hypot((container.width - centerX).toDouble(), centerY.toDouble()),
-                    hypot(centerX.toDouble(), (container.height - centerY).toDouble()),
-                    hypot(
-                        (container.width - centerX).toDouble(),
-                        (container.height - centerY).toDouble()
-                    )
-                ).maxOrNull()?.toFloat() ?: 0f
-
-                val animator = ViewAnimationUtils.createCircularReveal(
-                    imageView,
-                    centerX,
-                    centerY,
-                    finalRadius,
-                    0f
-                )
-                animator.duration = 520L
-                animator.interpolator = FastOutSlowInInterpolator()
-                animator.addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        imageView.visibility = View.INVISIBLE
-                        onFinished()
-                    }
-                })
-                animator.start()
-            }
+    val overlay = overlayHost.overlay
+    val overlayView = when (request) {
+        is ThemeTransitionRequest -> View(hostView.context).apply {
+            setBackgroundColor(request.overlayColor)
         }
+
+        is LanguageTransitionRequest -> ImageView(hostView.context).apply {
+            setImageBitmap(request.screenshot)
+            scaleType = ImageView.ScaleType.FIT_XY
+        }
+    }
+
+    overlayView.layout(0, 0, overlayHost.width, overlayHost.height)
+    overlay.add(overlayView)
+
+    val centerX = request.origin.x.coerceIn(0f, overlayHost.width.toFloat()).toInt()
+    val centerY = request.origin.y.coerceIn(0f, overlayHost.height.toFloat()).toInt()
+    val startRadius = listOf(
+        hypot(centerX.toDouble(), centerY.toDouble()),
+        hypot((overlayHost.width - centerX).toDouble(), centerY.toDouble()),
+        hypot(centerX.toDouble(), (overlayHost.height - centerY).toDouble()),
+        hypot(
+            (overlayHost.width - centerX).toDouble(),
+            (overlayHost.height - centerY).toDouble()
+        )
+    ).maxOrNull()?.toFloat() ?: 0f
+
+    val animator = ViewAnimationUtils.createCircularReveal(
+        overlayView,
+        centerX,
+        centerY,
+        startRadius,
+        0f
     )
+    animator.duration = if (request is LanguageTransitionRequest) 360L else 420L
+    animator.interpolator = FastOutSlowInInterpolator()
+    animator.addListener(object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+            overlay.remove(overlayView)
+            onFinished()
+        }
+    })
+    animator.start()
 }
+
+fun Color.toOverlayArgb(): Int = toArgb()
