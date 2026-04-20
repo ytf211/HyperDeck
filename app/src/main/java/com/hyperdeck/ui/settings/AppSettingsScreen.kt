@@ -221,6 +221,7 @@ fun AppSettingsScreen(
                     false -> 1
                     true -> 2
                 }
+                val themeRevealColor = MaterialTheme.colorScheme.surface.toArgb()
                 TransitionChoiceRow(
                     options = options,
                     selectedIndex = selectedIndex,
@@ -233,7 +234,7 @@ fun AppSettingsScreen(
                         }
                         viewModel.startThemeTransition(
                             origin = origin,
-                            overlayColor = MaterialTheme.colorScheme.surface.toArgb(),
+                            overlayColor = themeRevealColor,
                             enabled = targetPreference
                         )
                     }
