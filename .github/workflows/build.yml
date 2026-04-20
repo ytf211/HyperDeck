@@ -95,16 +95,18 @@ jobs:
         run: |
           cat > RELEASE_NOTES.md <<EOF
           ## HyperDeck ${{ steps.version.outputs.tag }}
+          
+          ### 更新日志
+          EOF
 
-          Android 系统管理工具，基于 Shizuku 提供 ADB/Root 级别的系统操控能力。
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n1)
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:'- %s' "$PREVIOUS_TAG"..HEAD >> RELEASE_NOTES.md
+          else
+            git log --pretty=format:'- %s' -n 12 >> RELEASE_NOTES.md
+          fi
 
-          ### 主要功能
-          - **系统设置管理** — JSON 驱动的分类设置面板，支持开关/滑块/选择/输入控件
-          - **Shell 终端** — 内置命令行，支持命令历史、取消、快捷命令
-          - **无障碍服务管理** — 一键开关任意无障碍服务
-          - **配置导入导出** — 分享和导入 system_settings.json
-          - **自定义分类** — 自由添加/删除/排序工具卡片和设置项
-          - **主题切换** — 跟随系统 / 浅色 / 深色 三选一
+          cat >> RELEASE_NOTES.md <<EOF
 
           ### 下载说明
           EOF
@@ -133,7 +135,7 @@ jobs:
 
       - name: Create Release
         if: ${{ inputs.release }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: HyperDeck ${{ steps.version.outputs.tag }}
