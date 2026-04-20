@@ -1,6 +1,7 @@
 package com.hyperdeck.ui.settings
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,17 +37,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.view.drawToBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.BuildConfig
 import com.hyperdeck.R
 import com.hyperdeck.shizuku.ShizukuStatus
-import com.hyperdeck.ui.theme.resolveHyperDeckColorScheme
 import com.hyperdeck.ui.theme.ShizukuGreen
 import com.hyperdeck.ui.theme.ShizukuRed
-import androidx.compose.foundation.isSystemInDarkTheme
 
 @Composable
 fun AppSettingsScreen(
@@ -55,12 +56,12 @@ fun AppSettingsScreen(
     viewModel: AppSettingsViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val rootView = LocalView.current.rootView
     val shizukuStatus by viewModel.shizukuStatus.collectAsStateWithLifecycle()
     val svcConnected by viewModel.serviceConnected.collectAsStateWithLifecycle()
     val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     var restoreSummary by remember { mutableStateOf<String?>(null) }
-    val systemDarkTheme = isSystemInDarkTheme()
 
     val uid = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getUid() else -1
     val apiVersion = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getApiVersion() else -1
@@ -188,14 +189,14 @@ fun AppSettingsScreen(
                     "en" -> 2
                     else -> 0
                 }
-                val revealSurfaceColor = MaterialTheme.colorScheme.surface
                 TransitionChoiceRow(
                     options = languageOptions,
                     selectedIndex = selectedLanguageIndex,
                     onSelected = { index, origin ->
+                        val screenshot = rootView.safeScreenshot()
                         viewModel.startLanguageTransition(
                             origin = origin,
-                            overlayColor = revealSurfaceColor,
+                            screenshot = screenshot,
                             languageTag = when (index) {
                                 0 -> null
                                 1 -> "zh-CN"
@@ -229,14 +230,9 @@ fun AppSettingsScreen(
                             2 -> true
                             else -> null
                         }
-                        val targetDarkTheme = targetPreference ?: systemDarkTheme
                         viewModel.startThemeTransition(
                             origin = origin,
-                            overlayColor = resolveHyperDeckColorScheme(
-                                context = context,
-                                darkTheme = targetDarkTheme,
-                                dynamicColor = true
-                            ).surface,
+                            screenshot = rootView.safeScreenshot(),
                             enabled = targetPreference
                         )
                     }
@@ -335,6 +331,18 @@ fun AppSettingsScreen(
                 InfoRow(stringResource(R.string.package_name), BuildConfig.APPLICATION_ID)
             }
         }
+    }
+}
+
+private fun android.view.View.safeScreenshot(): Bitmap {
+    return try {
+        drawToBitmap(Bitmap.Config.ARGB_8888)
+    } catch (_: Exception) {
+        Bitmap.createBitmap(
+            width.coerceAtLeast(1),
+            height.coerceAtLeast(1),
+            Bitmap.Config.ARGB_8888
+        )
     }
 }
 

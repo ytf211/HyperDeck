@@ -1,66 +1,69 @@
 package com.hyperdeck.ui.theme
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 
-sealed interface UiTransitionRequest {
-    val origin: Offset
-    val overlayColor: androidx.compose.ui.graphics.Color
-    val token: Long
-
-    class Theme(
-        override val token: Long,
-        override val origin: Offset,
-        override val overlayColor: androidx.compose.ui.graphics.Color,
-        val applyChange: suspend () -> Unit
-    ) : UiTransitionRequest
-
-    class Language(
-        override val token: Long,
-        override val origin: Offset,
-        override val overlayColor: androidx.compose.ui.graphics.Color,
-        val applyChange: suspend () -> Unit
-    ) : UiTransitionRequest
-}
+data class UiTransitionRequest(
+    val token: Long,
+    val screenshot: Bitmap,
+    val origin: Offset,
+    val minActivityToken: Int
+)
 
 class UiTransitionManager {
 
-    var activeRequest: UiTransitionRequest? by mutableStateOf(null)
+    private var nextTransitionToken = 0L
+    private var nextActivityToken = 0
+
+    var currentActivityToken: Int = 0
         private set
 
-    private var nextToken = 0L
+    var activeRequest: UiTransitionRequest? = null
+        private set
 
-    fun startThemeTransition(
-        origin: Offset,
-        overlayColor: androidx.compose.ui.graphics.Color,
-        applyChange: suspend () -> Unit
-    ) {
-        activeRequest = UiTransitionRequest.Theme(
-            token = ++nextToken,
-            origin = origin,
-            overlayColor = overlayColor,
-            applyChange = applyChange
+    fun registerActivity(): Int {
+        currentActivityToken = ++nextActivityToken
+        return currentActivityToken
+    }
+
+    fun startThemeTransition(origin: Offset, screenshot: Bitmap) {
+        replaceRequest(
+            UiTransitionRequest(
+                token = ++nextTransitionToken,
+                screenshot = screenshot,
+                origin = origin,
+                minActivityToken = currentActivityToken
+            )
         )
     }
 
-    fun startLanguageTransition(
-        origin: Offset,
-        overlayColor: androidx.compose.ui.graphics.Color,
-        applyChange: suspend () -> Unit
-    ) {
-        activeRequest = UiTransitionRequest.Language(
-            token = ++nextToken,
-            origin = origin,
-            overlayColor = overlayColor,
-            applyChange = applyChange
+    fun startLanguageTransition(origin: Offset, screenshot: Bitmap) {
+        replaceRequest(
+            UiTransitionRequest(
+                token = ++nextTransitionToken,
+                screenshot = screenshot,
+                origin = origin,
+                minActivityToken = currentActivityToken + 1
+            )
         )
     }
 
     fun clear(token: Long) {
-        if (activeRequest?.token == token) {
+        val request = activeRequest
+        if (request?.token == token) {
+            request.screenshot.recycleSafely()
             activeRequest = null
+        }
+    }
+
+    private fun replaceRequest(newRequest: UiTransitionRequest) {
+        activeRequest?.screenshot.recycleSafely()
+        activeRequest = newRequest
+    }
+
+    private fun Bitmap.recycleSafely() {
+        if (!isRecycled) {
+            recycle()
         }
     }
 }

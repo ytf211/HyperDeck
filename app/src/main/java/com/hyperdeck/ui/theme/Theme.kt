@@ -1,31 +1,27 @@
 package com.hyperdeck.ui.theme
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.os.Build
+import android.view.View
+import android.view.ViewAnimationUtils
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.animation.core.AnimationVector1D
-import kotlinx.coroutines.delay
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import kotlin.math.hypot
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue80,
@@ -70,77 +66,86 @@ fun HyperDeckTheme(
 @Composable
 fun RevealTransitionHost(
     manager: UiTransitionManager,
+    activityToken: Int,
     content: @Composable () -> Unit
 ) {
     val request = manager.activeRequest
-    val radius = remember(request?.token) { Animatable(0f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         content()
 
-        if (request != null) {
-            RevealOverlay(
+        if (request != null && activityToken >= request.minActivityToken) {
+            NativeCircularRevealOverlay(
                 request = request,
-                radius = radius,
                 onFinished = { manager.clear(request.token) }
             )
         }
     }
 }
 
-private suspend fun UiTransitionRequest.apply() {
-    when (this) {
-        is UiTransitionRequest.Language -> applyChange()
-        is UiTransitionRequest.Theme -> applyChange()
-    }
-}
-
 @Composable
-private fun RevealOverlay(
+private fun NativeCircularRevealOverlay(
     request: UiTransitionRequest,
-    radius: Animatable<Float, AnimationVector1D>,
     onFinished: () -> Unit
 ) {
-    val animationSpec = remember {
-        tween<Float>(durationMillis = 520, easing = FastOutSlowInEasing)
-    }
-    val holdDelay = if (request is UiTransitionRequest.Language) 160L else 90L
-    var canvasSize by remember(request.token) { mutableStateOf(Size.Zero) }
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { context ->
+            FrameLayout(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                val imageView = ImageView(context).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                    scaleType = ImageView.ScaleType.FIT_XY
+                    setImageBitmap(request.screenshot)
+                }
+                addView(imageView)
+            }
+        },
+        update = { container ->
+            val imageView = container.getChildAt(0) as ImageView
+            imageView.setImageBitmap(request.screenshot)
 
-    LaunchedEffect(request.token, canvasSize) {
-        if (canvasSize == Size.Zero) return@LaunchedEffect
-        val targetRadius = maxRevealRadius(request.origin, canvasSize)
-        radius.snapTo(0f)
-        radius.animateTo(targetRadius, animationSpec)
-        request.apply()
-        delay(holdDelay)
-        onFinished()
-    }
+            if (container.getTag(request.token.hashCode()) == true) {
+                return@AndroidView
+            }
 
-    Canvas(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        canvasSize = size
-        drawCircle(
-            color = request.overlayColor,
-            radius = radius.value,
-            center = Offset(
-                x = request.origin.x.coerceIn(0f, size.width),
-                y = request.origin.y.coerceIn(0f, size.height)
-            )
-        )
-    }
-}
+            container.setTag(request.token.hashCode(), true)
+            container.post {
+                val centerX = request.origin.x.coerceIn(0f, container.width.toFloat()).toInt()
+                val centerY = request.origin.y.coerceIn(0f, container.height.toFloat()).toInt()
+                val finalRadius = listOf(
+                    hypot(centerX.toDouble(), centerY.toDouble()),
+                    hypot((container.width - centerX).toDouble(), centerY.toDouble()),
+                    hypot(centerX.toDouble(), (container.height - centerY).toDouble()),
+                    hypot(
+                        (container.width - centerX).toDouble(),
+                        (container.height - centerY).toDouble()
+                    )
+                ).maxOrNull()?.toFloat() ?: 0f
 
-private fun maxRevealRadius(origin: Offset, size: Size): Float {
-    if (size == Size.Zero) return 0f
-    val corners = listOf(
-        Offset.Zero,
-        Offset(size.width, 0f),
-        Offset(0f, size.height),
-        Offset(size.width, size.height)
+                val animator = ViewAnimationUtils.createCircularReveal(
+                    imageView,
+                    centerX,
+                    centerY,
+                    finalRadius,
+                    0f
+                )
+                animator.duration = 520L
+                animator.interpolator = FastOutSlowInInterpolator()
+                animator.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        imageView.visibility = View.INVISIBLE
+                        onFinished()
+                    }
+                })
+                animator.start()
+            }
+        }
     )
-    return corners.maxOf { corner ->
-        kotlin.math.hypot((corner.x - origin.x).toDouble(), (corner.y - origin.y).toDouble()).toFloat()
-    }
 }

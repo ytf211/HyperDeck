@@ -1,9 +1,9 @@
 package com.hyperdeck.ui.settings
 
 import android.app.Application
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -43,24 +43,18 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
         _appLanguage.value = currentLanguageTag()
     }
 
-    fun startThemeTransition(origin: Offset, overlayColor: Color, enabled: Boolean?) {
-        uiTransitionManager.startThemeTransition(
-            origin = origin,
-            overlayColor = overlayColor
-        ) {
+    fun startThemeTransition(origin: Offset, screenshot: Bitmap, enabled: Boolean?) {
+        uiTransitionManager.startThemeTransition(origin = origin, screenshot = screenshot)
+        viewModelScope.launch {
             prefsRepo.setDarkMode(enabled)
         }
     }
 
-    fun startLanguageTransition(origin: Offset, overlayColor: Color, languageTag: String?) {
-        uiTransitionManager.startLanguageTransition(
-            origin = origin,
-            overlayColor = overlayColor
-        ) {
-            val locales = LocaleListCompat.forLanguageTags(languageTag.orEmpty())
-            AppCompatDelegate.setApplicationLocales(locales)
-            _appLanguage.value = currentLanguageTag()
-        }
+    fun startLanguageTransition(origin: Offset, screenshot: Bitmap, languageTag: String?) {
+        uiTransitionManager.startLanguageTransition(origin = origin, screenshot = screenshot)
+        val locales = LocaleListCompat.forLanguageTags(languageTag.orEmpty())
+        AppCompatDelegate.setApplicationLocales(locales)
+        _appLanguage.value = currentLanguageTag()
     }
 
     fun exportConfig(onResult: (String) -> Unit) {
