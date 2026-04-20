@@ -38,7 +38,7 @@ class SettingsRepository(private val context: Context) {
     suspend fun addCategory(name: String) = withContext(Dispatchers.IO) {
         val all = SettingsConfigParser.loadFromInternal(context).toMutableList()
         if (all.none { it.category == name }) {
-            all.add(SettingsCategory(name, emptyList()))
+            all.add(SettingsCategory(category = name, items = emptyList()))
             SettingsConfigParser.saveToInternal(context, all)
             _categories.value = decorateBuiltInMetadata(all)
         }

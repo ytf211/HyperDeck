@@ -87,7 +87,7 @@ class SystemSettingsViewModel(application: Application) : AndroidViewModel(appli
                 _categories.value = cats
                 savePreservingAll(updatedCat)
             } else {
-                val newCat = SettingsCategory(categoryFilter ?: "Custom", listOf(item))
+                val newCat = SettingsCategory(category = categoryFilter ?: "Custom", items = listOf(item))
                 cats.add(newCat)
                 _categories.value = cats
                 savePreservingAll(newCat)
