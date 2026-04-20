@@ -53,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ fun SystemSettingsScreen(
     categoryFilter: String? = null,
     viewModel: SystemSettingsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var editingItem by remember { mutableStateOf<SettingsItem?>(null) }
     var deletingItem by remember { mutableStateOf<SettingsItem?>(null) }
@@ -111,7 +113,7 @@ fun SystemSettingsScreen(
                 item(key = "header_${category.category}") {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        category.category,
+                        SettingsTextResolver.categoryTitle(context, category),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -148,7 +150,7 @@ fun SystemSettingsScreen(
         AlertDialog(
             onDismissRequest = { deletingItem = null },
             title = { Text(stringResource(R.string.delete)) },
-            text = { Text("${deletingItem!!.title}?") },
+            text = { Text("${SettingsTextResolver.itemTitle(context, deletingItem!!)}?") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteItem(deletingItem!!)
@@ -185,6 +187,7 @@ private fun SettingsItemCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
 
     val typeIcon: ImageVector = when (item.type) {
@@ -217,10 +220,14 @@ private fun SettingsItemCard(
                 )
                 Spacer(Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(item.title, style = MaterialTheme.typography.titleSmall)
-                    if (item.description.isNotBlank()) {
+                    Text(
+                        SettingsTextResolver.itemTitle(context, item),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    val description = SettingsTextResolver.itemDescription(context, item)
+                    if (description.isNotBlank()) {
                         Text(
-                            item.description,
+                            description,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

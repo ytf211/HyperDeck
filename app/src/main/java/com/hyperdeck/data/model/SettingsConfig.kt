@@ -1,16 +1,23 @@
 package com.hyperdeck.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class SettingsCategory(
+    @SerialName("category_key")
+    val categoryKey: String = "",
     val category: String,
     val items: List<SettingsItem>
 )
 
 @Serializable
 data class SettingsItem(
+    @SerialName("title_key")
+    val titleKey: String = "",
     val title: String,
+    @SerialName("description_key")
+    val descriptionKey: String = "",
     val description: String = "",
     val type: String, // toggle, slider, select, input
     val command: String = "",

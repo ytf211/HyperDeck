@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        (application as HyperDeckApp).shizukuManager.unbindService()
+        if (!isChangingConfigurations) {
+            (application as HyperDeckApp).shizukuManager.unbindService()
+        }
     }
 }

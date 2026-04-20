@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import com.hyperdeck.shizuku.ShizukuStatus
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -45,6 +46,7 @@ import com.hyperdeck.ui.settings.LogScreen
 import com.hyperdeck.ui.shell.ShellScreen
 import com.hyperdeck.ui.tools.ToolsScreen
 import com.hyperdeck.ui.tools.accessibility.AccessibilityScreen
+import com.hyperdeck.ui.tools.settings.SettingsTextResolver
 import com.hyperdeck.ui.tools.settings.SystemSettingsScreen
 import kotlinx.serialization.Serializable
 
@@ -63,6 +65,7 @@ data class BottomNavItem(
 
 @Composable
 fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -91,7 +94,12 @@ fun HyperDeckNavGraph(shizukuManager: ShizukuManager) {
     val currentTitle = when {
         navBackStackEntry?.destination?.hasRoute<AccessibilityRoute>() == true -> stringResource(R.string.accessibility_management)
         navBackStackEntry?.destination?.hasRoute<CategoryRoute>() == true -> {
-            try { navBackStackEntry?.toRoute<CategoryRoute>()?.category ?: "" } catch (_: Exception) { "" }
+            try {
+                val rawCategory = navBackStackEntry?.toRoute<CategoryRoute>()?.category.orEmpty()
+                SettingsTextResolver.categoryTitle(context, rawCategory)
+            } catch (_: Exception) {
+                ""
+            }
         }
         navBackStackEntry?.destination?.hasRoute<LogRoute>() == true -> stringResource(R.string.log_mode)
         else -> stringResource(R.string.app_name)

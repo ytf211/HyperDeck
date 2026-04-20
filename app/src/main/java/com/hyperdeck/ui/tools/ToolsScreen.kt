@@ -45,12 +45,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdeck.R
+import com.hyperdeck.ui.tools.settings.SettingsTextResolver
 
 data class ToolItem(
     val id: String,
@@ -60,6 +62,11 @@ data class ToolItem(
     val accentColor: Color,
     val isDeletable: Boolean,
     val onClick: () -> Unit
+)
+
+private data class PendingCategoryDeletion(
+    val rawName: String,
+    val displayName: String
 )
 
 private val categoryColors = listOf(
@@ -80,10 +87,11 @@ fun ToolsScreen(
     onNavigateToCategory: (String) -> Unit,
     viewModel: ToolsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val categories by viewModel.categories.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
-    var categoryToDelete by remember { mutableStateOf<String?>(null) }
+    var categoryToDelete by remember { mutableStateOf<PendingCategoryDeletion?>(null) }
 
     val tools = buildList {
         add(
@@ -98,12 +106,13 @@ fun ToolsScreen(
             )
         )
         categories.forEachIndexed { index, cat ->
+            val categoryTitle = SettingsTextResolver.categoryTitle(context, cat)
             add(
                 ToolItem(
                     id = "cat_${cat.category}",
-                    title = cat.category,
+                    title = categoryTitle,
                     description = "${cat.items.size} items",
-                    icon = categoryIcon(cat.category),
+                    icon = categoryIcon(categoryTitle),
                     accentColor = categoryColors[index % categoryColors.size],
                     isDeletable = true,
                     onClick = { onNavigateToCategory(cat.category) }
@@ -136,7 +145,15 @@ fun ToolsScreen(
                 ToolCard(
                     tool = tool,
                     onLongClick = if (tool.isDeletable) {
-                        { categoryToDelete = tool.title }
+                        {
+                            val category = categories.firstOrNull { "cat_${it.category}" == tool.id }
+                            if (category != null) {
+                                categoryToDelete = PendingCategoryDeletion(
+                                    rawName = category.category,
+                                    displayName = SettingsTextResolver.categoryTitle(context, category)
+                                )
+                            }
+                        }
                     } else null
                 )
             }
@@ -153,12 +170,12 @@ fun ToolsScreen(
         )
     }
 
-    categoryToDelete?.let { name ->
+    categoryToDelete?.let { pending ->
         DeleteCategoryDialog(
-            categoryName = name,
+            categoryName = pending.displayName,
             onDismiss = { categoryToDelete = null },
             onConfirm = {
-                viewModel.removeCategory(name)
+                viewModel.removeCategory(pending.rawName)
                 categoryToDelete = null
             }
         )

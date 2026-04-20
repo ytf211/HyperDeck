@@ -28,6 +28,8 @@ class ShizukuManager(private val packageName: String) {
     val serviceConnected: StateFlow<Boolean> = _serviceConnected.asStateFlow()
 
     private var shellService: IShellService? = null
+    @Volatile
+    private var bindingInProgress = false
 
     private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
         log("Binder received")
@@ -60,6 +62,7 @@ class ShizukuManager(private val packageName: String) {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             log("UserService onServiceConnected, binder=${binder != null}")
+            bindingInProgress = false
             if (binder != null && binder.pingBinder()) {
                 shellService = IShellService.Stub.asInterface(binder)
                 _serviceConnected.value = true
@@ -71,6 +74,7 @@ class ShizukuManager(private val packageName: String) {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             log("UserService disconnected")
+            bindingInProgress = false
             shellService = null
             _serviceConnected.value = false
         }
@@ -140,15 +144,25 @@ class ShizukuManager(private val packageName: String) {
     }
 
     fun bindService() {
+        if (_serviceConnected.value || shellService != null) {
+            log("bindService skipped: already connected")
+            return
+        }
+        if (bindingInProgress) {
+            log("bindService skipped: binding already in progress")
+            return
+        }
         try {
             val version = Shizuku.getVersion()
             if (version < 10) {
                 LogRepository.w(TAG, "Requires Shizuku API 10+, got $version")
                 return
             }
+            bindingInProgress = true
             log("Binding UserService (API $version)...")
             Shizuku.bindUserService(userServiceArgs, serviceConnection)
         } catch (e: Exception) {
+            bindingInProgress = false
             LogRepository.e(TAG, "Bind service failed: ${e.message}")
         }
     }
@@ -157,6 +171,7 @@ class ShizukuManager(private val packageName: String) {
         try {
             Shizuku.unbindUserService(userServiceArgs, serviceConnection, true)
         } catch (_: Exception) {}
+        bindingInProgress = false
         shellService = null
         _serviceConnected.value = false
     }

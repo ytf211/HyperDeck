@@ -19,12 +19,12 @@ class SettingsRepository(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun load() = withContext(Dispatchers.IO) {
-        _categories.value = SettingsConfigParser.loadFromInternal(context)
+        _categories.value = decorateBuiltInMetadata(SettingsConfigParser.loadFromInternal(context))
     }
 
     suspend fun save(categories: List<SettingsCategory>) = withContext(Dispatchers.IO) {
         SettingsConfigParser.saveToInternal(context, categories)
-        _categories.value = categories
+        _categories.value = decorateBuiltInMetadata(categories)
     }
 
     suspend fun updateCategory(categoryName: String, updatedCategory: SettingsCategory) = withContext(Dispatchers.IO) {
@@ -32,7 +32,7 @@ class SettingsRepository(private val context: Context) {
         val idx = all.indexOfFirst { it.category == categoryName }
         if (idx >= 0) all[idx] = updatedCategory else all.add(updatedCategory)
         SettingsConfigParser.saveToInternal(context, all)
-        _categories.value = all
+        _categories.value = decorateBuiltInMetadata(all)
     }
 
     suspend fun addCategory(name: String) = withContext(Dispatchers.IO) {
@@ -40,7 +40,7 @@ class SettingsRepository(private val context: Context) {
         if (all.none { it.category == name }) {
             all.add(SettingsCategory(name, emptyList()))
             SettingsConfigParser.saveToInternal(context, all)
-            _categories.value = all
+            _categories.value = decorateBuiltInMetadata(all)
         }
     }
 
@@ -48,7 +48,7 @@ class SettingsRepository(private val context: Context) {
         val all = SettingsConfigParser.loadFromInternal(context).toMutableList()
         all.removeAll { it.category == categoryName }
         SettingsConfigParser.saveToInternal(context, all)
-        _categories.value = all
+        _categories.value = decorateBuiltInMetadata(all)
     }
 
     suspend fun exportJson(): String = withContext(Dispatchers.IO) {
@@ -61,7 +61,7 @@ class SettingsRepository(private val context: Context) {
     suspend fun importJson(jsonStr: String) = withContext(Dispatchers.IO) {
         val parsed = json.decodeFromString<List<SettingsCategory>>(jsonStr)
         SettingsConfigParser.saveToInternal(context, parsed)
-        _categories.value = parsed
+        _categories.value = decorateBuiltInMetadata(parsed)
     }
 
     suspend fun restoreMissingDefaults() = withContext(Dispatchers.IO) {
@@ -74,7 +74,70 @@ class SettingsRepository(private val context: Context) {
 
         val merged = mergeMissingDefaults(current, defaults)
         SettingsConfigParser.saveToInternal(context, merged)
-        _categories.value = merged
+        _categories.value = decorateBuiltInMetadata(merged)
+    }
+
+    private fun decorateBuiltInMetadata(categories: List<SettingsCategory>): List<SettingsCategory> {
+        val defaults = SettingsConfigParser.loadFromAssets(context)
+        if (defaults.isEmpty()) return categories
+        return categories.map { category ->
+            val defaultCategory = defaults.firstOrNull { matchesCategory(it, category) }
+            if (defaultCategory == null) {
+                category
+            } else {
+                category.copy(
+                    categoryKey = category.categoryKey.ifBlank {
+                        if (category.category == defaultCategory.category) {
+                            defaultCategory.categoryKey
+                        } else {
+                            ""
+                        }
+                    },
+                    items = category.items.map { item ->
+                        decorateItemMetadata(item, defaultCategory.items)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun matchesCategory(defaultCategory: SettingsCategory, currentCategory: SettingsCategory): Boolean {
+        return when {
+            currentCategory.categoryKey.isNotBlank() &&
+                currentCategory.categoryKey == defaultCategory.categoryKey -> true
+            else -> currentCategory.category == defaultCategory.category
+        }
+    }
+
+    private fun decorateItemMetadata(
+        item: SettingsItem,
+        defaultItems: List<SettingsItem>
+    ): SettingsItem {
+        val defaultItem = defaultItems.firstOrNull { matchesItem(it, item) } ?: return item
+
+        val titleKey = when {
+            item.titleKey.isNotBlank() -> item.titleKey
+            item.title == defaultItem.title -> defaultItem.titleKey
+            else -> ""
+        }
+        val descriptionKey = when {
+            item.descriptionKey.isNotBlank() -> item.descriptionKey
+            item.description == defaultItem.description -> defaultItem.descriptionKey
+            else -> ""
+        }
+
+        return item.copy(
+            titleKey = titleKey,
+            descriptionKey = descriptionKey
+        )
+    }
+
+    private fun matchesItem(defaultItem: SettingsItem, currentItem: SettingsItem): Boolean {
+        return defaultItem.type == currentItem.type &&
+            defaultItem.command == currentItem.command &&
+            defaultItem.command_on == currentItem.command_on &&
+            defaultItem.command_off == currentItem.command_off &&
+            defaultItem.check_command == currentItem.check_command
     }
 
     private fun mergeMissingDefaults(
