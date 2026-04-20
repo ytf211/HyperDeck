@@ -89,6 +89,9 @@
     <string name="apply">Apply</string>
     <string name="delete">Delete</string>
     <string name="enter_value">Enter Value</string>
+    <string name="view_current_value">View Current Value</string>
+    <string name="current_value">Current Value</string>
+    <string name="value_empty">(empty)</string>
     <string name="confirm">OK</string>
     <string name="back">Back</string>
 

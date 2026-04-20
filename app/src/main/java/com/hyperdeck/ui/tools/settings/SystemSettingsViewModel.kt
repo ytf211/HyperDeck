@@ -124,7 +124,36 @@ class SystemSettingsViewModel(application: Application) : AndroidViewModel(appli
     }
 
     companion object {
-        fun parseToggleState(output: String): Boolean {
+        private val whitespaceRegex = "\\s+".toRegex()
+
+        fun resolveToggleState(item: SettingsItem, output: String): Boolean {
+            return when (item.state_match_mode) {
+                "exact" -> resolveExactToggleState(item, output)
+                else -> parseDefaultToggleState(output)
+            }
+        }
+
+        fun normalizeStateValue(value: String): String {
+            return value.trim().replace(whitespaceRegex, "")
+        }
+
+        private fun resolveExactToggleState(item: SettingsItem, output: String): Boolean {
+            val normalizedOutput = normalizeStateValue(output)
+            val normalizedOn = item.state_on_value
+                .takeIf { it.isNotBlank() }
+                ?.let(::normalizeStateValue)
+            val normalizedOff = item.state_off_value
+                .takeIf { it.isNotBlank() }
+                ?.let(::normalizeStateValue)
+
+            return when {
+                normalizedOn != null && normalizedOutput == normalizedOn -> true
+                normalizedOff != null && normalizedOutput == normalizedOff -> false
+                else -> false
+            }
+        }
+
+        private fun parseDefaultToggleState(output: String): Boolean {
             val trimmed = output.trim()
             return trimmed != "null" && trimmed != "0" && trimmed.isNotBlank()
         }

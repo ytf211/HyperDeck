@@ -20,7 +20,10 @@ data class SettingsItem(
     val min: Float = 0f,
     val max: Float = 1f,
     val step: Float = 0.1f,
-    val options: List<SelectOption> = emptyList()
+    val options: List<SelectOption> = emptyList(),
+    val state_match_mode: String = "",
+    val state_on_value: String = "",
+    val state_off_value: String = ""
 )
 
 @Serializable

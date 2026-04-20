@@ -89,6 +89,9 @@
     <string name="apply">应用</string>
     <string name="delete">删除</string>
     <string name="enter_value">输入数值</string>
+    <string name="view_current_value">查看当前值</string>
+    <string name="current_value">当前值</string>
+    <string name="value_empty">（空）</string>
     <string name="confirm">确定</string>
     <string name="back">返回</string>
 

@@ -271,34 +271,81 @@ private fun SettingsItemCard(
 @Composable
 private fun ToggleControl(item: SettingsItem, viewModel: SystemSettingsViewModel) {
     var checked by remember { mutableStateOf(false) }
-    var loaded by remember { mutableStateOf(false) }
+    var loaded by remember { mutableStateOf(item.check_command.isBlank()) }
+    var currentValue by remember { mutableStateOf("") }
+    var showCurrentValue by remember { mutableStateOf(false) }
+
+    fun refreshState(onLoaded: (() -> Unit)? = null) {
+        if (item.check_command.isBlank()) {
+            loaded = true
+            onLoaded?.invoke()
+            return
+        }
+        viewModel.executeCommand(item.check_command) { result ->
+            currentValue = result.fullOutput.trimEnd()
+            checked = SystemSettingsViewModel.resolveToggleState(item, result.output)
+            loaded = true
+            onLoaded?.invoke()
+        }
+    }
 
     LaunchedEffect(item.check_command) {
+        refreshState()
+    }
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Switch(
+                checked = checked,
+                enabled = loaded,
+                onCheckedChange = { newValue ->
+                    checked = newValue
+                    val cmd = if (newValue) item.command_on else item.command_off
+                    viewModel.executeCommand(cmd) {
+                        refreshState()
+                    }
+                }
+            )
+        }
+
         if (item.check_command.isNotBlank()) {
-            viewModel.executeCommand(item.check_command) { result ->
-                checked = SystemSettingsViewModel.parseToggleState(result.output)
-                loaded = true
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    enabled = loaded,
+                    onClick = {
+                        refreshState {
+                            showCurrentValue = true
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.view_current_value))
+                }
             }
         }
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End
-    ) {
-        Switch(
-            checked = checked,
-            enabled = loaded,
-            onCheckedChange = { newValue ->
-                checked = newValue
-                val cmd = if (newValue) item.command_on else item.command_off
-                viewModel.executeCommand(cmd) {
-                    // Re-read actual state
-                    if (item.check_command.isNotBlank()) {
-                        viewModel.executeCommand(item.check_command) { result ->
-                            checked = SystemSettingsViewModel.parseToggleState(result.output)
-                        }
+    if (showCurrentValue) {
+        AlertDialog(
+            onDismissRequest = { showCurrentValue = false },
+            title = { Text(stringResource(R.string.current_value)) },
+            text = {
+                Text(
+                    if (currentValue.isBlank()) {
+                        stringResource(R.string.value_empty)
+                    } else {
+                        currentValue
                     }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showCurrentValue = false }) {
+                    Text(stringResource(R.string.confirm))
                 }
             }
         )
