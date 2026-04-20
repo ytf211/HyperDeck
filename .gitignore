@@ -8,6 +8,7 @@
 /app/build
 /captures
 /output
+/downloads
 /docs
 .externalNativeBuild
 .cxx
