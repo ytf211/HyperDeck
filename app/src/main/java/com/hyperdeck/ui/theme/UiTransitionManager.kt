@@ -57,7 +57,7 @@ class UiTransitionManager {
     }
 
     private fun replaceRequest(newRequest: UiTransitionRequest) {
-        activeRequest?.screenshot.recycleSafely()
+        activeRequest?.screenshot?.recycleSafely()
         activeRequest = newRequest
     }
 
