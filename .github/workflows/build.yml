@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Create a GitHub Release'
+        description: 'Build Release APKs'
+        type: boolean
+        default: false
+      publish_release:
+        description: 'Publish a GitHub Release'
         type: boolean
         default: false
       split_release_by_abi:
@@ -91,7 +95,7 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: Generate Release Notes
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release && inputs.publish_release }}
         run: |
           cat > RELEASE_NOTES.md <<EOF
           ## HyperDeck ${{ steps.version.outputs.tag }}
@@ -134,7 +138,7 @@ jobs:
           EOF
 
       - name: Create Release
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release && inputs.publish_release }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
