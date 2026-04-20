@@ -1,12 +1,16 @@
 package com.hyperdeck.ui.settings
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hyperdeck.HyperDeckApp
 import com.hyperdeck.shizuku.ShizukuStatus
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -19,11 +23,20 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
     val darkMode = prefsRepo.darkMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    private val _appLanguage = MutableStateFlow(currentLanguageTag())
+    val appLanguage: StateFlow<String?> = _appLanguage.asStateFlow()
+
     val shizukuStatus = shizukuManager.status
     val serviceConnected = shizukuManager.serviceConnected
 
     fun setDarkMode(enabled: Boolean?) {
         viewModelScope.launch { prefsRepo.setDarkMode(enabled) }
+    }
+
+    fun setAppLanguage(languageTag: String?) {
+        val locales = LocaleListCompat.forLanguageTags(languageTag.orEmpty())
+        AppCompatDelegate.setApplicationLocales(locales)
+        _appLanguage.value = currentLanguageTag()
     }
 
     fun exportConfig(onResult: (String) -> Unit) {
@@ -53,5 +66,11 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
                 onResult(false)
             }
         }
+    }
+
+    private fun currentLanguageTag(): String? {
+        return AppCompatDelegate.getApplicationLocales()
+            .toLanguageTags()
+            .ifBlank { null }
     }
 }

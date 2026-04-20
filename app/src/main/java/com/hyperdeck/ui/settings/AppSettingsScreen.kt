@@ -52,6 +52,7 @@ fun AppSettingsScreen(
     val shizukuStatus by viewModel.shizukuStatus.collectAsStateWithLifecycle()
     val svcConnected by viewModel.serviceConnected.collectAsStateWithLifecycle()
     val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     var restoreSummary by remember { mutableStateOf<String?>(null) }
 
     val uid = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getUid() else -1
@@ -167,6 +168,44 @@ fun AppSettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.app_language), style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(8.dp))
+                val languageOptions = listOf(
+                    stringResource(R.string.language_system),
+                    stringResource(R.string.language_zh_cn),
+                    stringResource(R.string.language_en)
+                )
+                val selectedLanguageIndex = when (appLanguage) {
+                    null -> 0
+                    "zh-CN" -> 1
+                    "en" -> 2
+                    else -> 0
+                }
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    languageOptions.forEachIndexed { index, label ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = languageOptions.size
+                            ),
+                            onClick = {
+                                viewModel.setAppLanguage(
+                                    when (index) {
+                                        0 -> null
+                                        1 -> "zh-CN"
+                                        2 -> "en"
+                                        else -> null
+                                    }
+                                )
+                            },
+                            selected = index == selectedLanguageIndex
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
                 Text(stringResource(R.string.dark_mode), style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
                 val options = listOf(

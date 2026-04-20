@@ -76,8 +76,8 @@
         "check_command": "settings get global stay_on_while_plugged_in"
       },
       {
-        "title": "触控预启动优化",
-        "description": "切换 touch_prestart_opt_config 的黑名单配置",
+        "title": "应用预加载开关",
+        "description": "控制 touch_prestart_opt_config 的应用预加载策略",
         "type": "toggle",
         "command_on": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[com.android.camera]}\"",
         "command_off": "settings put system touch_prestart_opt_config \"{featureDisable:false,bgExceptionInterceptDisable:false,touchDownPreStartBlackList:[disable_all_package]}\""
