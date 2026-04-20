@@ -111,11 +111,11 @@ private fun NativeCircularRevealOverlay(
             val imageView = container.getChildAt(0) as ImageView
             imageView.setImageBitmap(request.screenshot)
 
-            if (container.getTag(request.token.hashCode()) == true) {
+            if (container.tag == request.token) {
                 return@AndroidView
             }
 
-            container.setTag(request.token.hashCode(), true)
+            container.tag = request.token
             container.post {
                 val centerX = request.origin.x.coerceIn(0f, container.width.toFloat()).toInt()
                 val centerY = request.origin.y.coerceIn(0f, container.height.toFloat()).toInt()
