@@ -64,6 +64,10 @@
     <string name="config_management">配置管理</string>
     <string name="export_config">导出配置</string>
     <string name="import_config">导入配置</string>
+    <string name="restore_missing_defaults">恢复缺失默认项</string>
+    <string name="restore_missing_defaults_help">只会补回缺失的预设分组和设置项，不会覆盖你现有的自定义内容。</string>
+    <string name="restore_missing_defaults_done">已补回缺失的预设项。</string>
+    <string name="restore_missing_defaults_failed">补回预设项失败。</string>
 
     <!-- System Settings types -->
     <string name="type_toggle">开关</string>

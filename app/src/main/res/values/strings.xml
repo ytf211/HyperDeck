@@ -64,6 +64,10 @@
     <string name="config_management">Config Management</string>
     <string name="export_config">Export</string>
     <string name="import_config">Import</string>
+    <string name="restore_missing_defaults">Restore Missing Defaults</string>
+    <string name="restore_missing_defaults_help">Only missing preset categories and items will be added back. Your existing custom content will be kept.</string>
+    <string name="restore_missing_defaults_done">Missing preset items restored.</string>
+    <string name="restore_missing_defaults_failed">Could not restore preset items.</string>
 
     <!-- System Settings types -->
     <string name="type_toggle">Toggle</string>

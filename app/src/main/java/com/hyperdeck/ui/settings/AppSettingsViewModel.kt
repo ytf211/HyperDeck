@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hyperdeck.HyperDeckApp
-import com.hyperdeck.data.model.SettingsCategory
 import com.hyperdeck.shizuku.ShizukuStatus
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +37,17 @@ class AppSettingsViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             try {
                 settingsRepo.importJson(json)
+                onResult(true)
+            } catch (_: Exception) {
+                onResult(false)
+            }
+        }
+    }
+
+    fun restoreMissingDefaults(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                settingsRepo.restoreMissingDefaults()
                 onResult(true)
             } catch (_: Exception) {
                 onResult(false)

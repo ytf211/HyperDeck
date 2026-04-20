@@ -3,6 +3,7 @@ package com.hyperdeck.data.repository
 import android.content.Context
 import com.hyperdeck.data.config.SettingsConfigParser
 import com.hyperdeck.data.model.SettingsCategory
+import com.hyperdeck.data.model.SettingsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,5 +62,47 @@ class SettingsRepository(private val context: Context) {
         val parsed = json.decodeFromString<List<SettingsCategory>>(jsonStr)
         SettingsConfigParser.saveToInternal(context, parsed)
         _categories.value = parsed
+    }
+
+    suspend fun restoreMissingDefaults() = withContext(Dispatchers.IO) {
+        val current = SettingsConfigParser.loadFromInternal(context)
+        val defaults = SettingsConfigParser.loadFromAssets(context)
+        if (defaults.isEmpty()) {
+            _categories.value = current
+            return@withContext
+        }
+
+        val merged = mergeMissingDefaults(current, defaults)
+        SettingsConfigParser.saveToInternal(context, merged)
+        _categories.value = merged
+    }
+
+    private fun mergeMissingDefaults(
+        current: List<SettingsCategory>,
+        defaults: List<SettingsCategory>
+    ): List<SettingsCategory> {
+        val merged = current.toMutableList()
+        defaults.forEach { defaultCategory ->
+            val existingIndex = merged.indexOfFirst { it.category == defaultCategory.category }
+            if (existingIndex < 0) {
+                merged.add(defaultCategory)
+            } else {
+                val existingCategory = merged[existingIndex]
+                val mergedItems = mergeMissingItems(existingCategory.items, defaultCategory.items)
+                if (mergedItems.size != existingCategory.items.size) {
+                    merged[existingIndex] = existingCategory.copy(items = mergedItems)
+                }
+            }
+        }
+        return merged
+    }
+
+    private fun mergeMissingItems(
+        currentItems: List<SettingsItem>,
+        defaultItems: List<SettingsItem>
+    ): List<SettingsItem> {
+        val currentTitles = currentItems.mapTo(mutableSetOf()) { it.title }
+        val missingDefaults = defaultItems.filter { it.title !in currentTitles }
+        return currentItems + missingDefaults
     }
 }

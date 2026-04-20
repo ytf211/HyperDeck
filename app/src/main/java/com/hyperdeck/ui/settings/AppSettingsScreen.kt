@@ -26,6 +26,9 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,6 +52,7 @@ fun AppSettingsScreen(
     val shizukuStatus by viewModel.shizukuStatus.collectAsStateWithLifecycle()
     val svcConnected by viewModel.serviceConnected.collectAsStateWithLifecycle()
     val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
+    var restoreSummary by remember { mutableStateOf<String?>(null) }
 
     val uid = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getUid() else -1
     val apiVersion = if (shizukuStatus == ShizukuStatus.CONNECTED) shizukuManager.getApiVersion() else -1
@@ -222,26 +226,57 @@ fun AppSettingsScreen(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.exportConfig { json ->
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_TEXT, json)
+                                }
+                                context.startActivity(Intent.createChooser(intent, null))
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text(stringResource(R.string.export_config)) }
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
+                        modifier = Modifier.weight(1f)
+                    ) { Text(stringResource(R.string.import_config)) }
+                }
+                Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = {
-                        viewModel.exportConfig { json ->
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/json"
-                                putExtra(Intent.EXTRA_TEXT, json)
+                        viewModel.restoreMissingDefaults { success ->
+                            restoreSummary = if (success) {
+                                context.getString(R.string.restore_missing_defaults_done)
+                            } else {
+                                context.getString(R.string.restore_missing_defaults_failed)
                             }
-                            context.startActivity(Intent.createChooser(intent, null))
                         }
                     },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(R.string.export_config)) }
-                OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(R.string.import_config)) }
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.restore_missing_defaults))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.restore_missing_defaults_help),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                restoreSummary?.let { summary ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
