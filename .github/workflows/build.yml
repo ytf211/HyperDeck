@@ -19,10 +19,10 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -31,7 +31,7 @@ jobs:
         run: echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > app/debug.keystore
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           cache-read-only: false
 
@@ -78,17 +78,57 @@ jobs:
 
       - name: Upload Debug APK
         if: ${{ !inputs.release }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: HyperDeck-debug
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload Release APKs
         if: ${{ inputs.release }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: HyperDeck-release
           path: app/build/outputs/apk/release/*.apk
+
+      - name: Generate Release Notes
+        if: ${{ inputs.release }}
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          ## HyperDeck ${{ steps.version.outputs.tag }}
+
+          Android 系统管理工具，基于 Shizuku 提供 ADB/Root 级别的系统操控能力。
+
+          ### 主要功能
+          - **系统设置管理** — JSON 驱动的分类设置面板，支持开关/滑块/选择/输入控件
+          - **Shell 终端** — 内置命令行，支持命令历史、取消、快捷命令
+          - **无障碍服务管理** — 一键开关任意无障碍服务
+          - **配置导入导出** — 分享和导入 system_settings.json
+          - **自定义分类** — 自由添加/删除/排序工具卡片和设置项
+          - **主题切换** — 跟随系统 / 浅色 / 深色 三选一
+
+          ### 下载说明
+          EOF
+
+          if [ "${{ inputs.split_release_by_abi }}" = "true" ]; then
+            cat >> RELEASE_NOTES.md <<EOF
+          | 文件 | 说明 |
+          |------|------|
+          | \`*-arm64-v8a.apk\` | 64位 ARM 设备 (大多数现代手机) |
+          | \`*-armeabi-v7a.apk\` | 32位 ARM 设备 |
+          | \`*-x86_64.apk\` | x86_64 模拟器/设备 |
+          EOF
+          else
+            cat >> RELEASE_NOTES.md <<EOF
+          | 文件 | 说明 |
+          |------|------|
+          | \`*-universal.apk\` | 通用版 (体积较大，兼容所有架构) |
+          EOF
+          fi
+
+          cat >> RELEASE_NOTES.md <<EOF
+
+          > 需要安装 [Shizuku](https://github.com/RikkaApps/Shizuku) 才能使用完整功能。
+          EOF
 
       - name: Create Release
         if: ${{ inputs.release }}
@@ -98,21 +138,4 @@ jobs:
           name: HyperDeck ${{ steps.version.outputs.tag }}
           files: |
             app/build/outputs/apk/release/*.apk
-          body: |
-            ## HyperDeck ${{ steps.version.outputs.tag }}
-
-            Android 系统管理工具，基于 Shizuku 提供 ADB/Root 级别的系统操控能力。
-
-            ### 主要功能
-            - **系统设置管理** — JSON 驱动的分类设置面板，支持开关/滑块/选择/输入控件
-            - **Shell 终端** — 内置命令行，支持命令历史、取消、快捷命令
-            - **无障碍服务管理** — 一键开关任意无障碍服务
-            - **配置导入导出** — 分享和导入 system_settings.json
-            - **自定义分类** — 自由添加/删除/排序工具卡片和设置项
-            - **主题切换** — 跟随系统 / 浅色 / 深色 三选一
-
-            ### 下载说明
-            - `*-universal.apk`：通用版，兼容所有支持架构
-            - `*-arm64-v8a.apk` / `*-armeabi-v7a.apk` / `*-x86_64.apk`：仅在启用分架构发布时提供
-
-            > 需要安装 [Shizuku](https://github.com/RikkaApps/Shizuku) 才能使用完整功能。
+          body_path: RELEASE_NOTES.md
