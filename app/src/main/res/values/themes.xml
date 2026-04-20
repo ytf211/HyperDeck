@@ -3,8 +3,7 @@
     <style name="Theme.HyperDeck" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">?attr/colorSurface</item>
-        <item name="windowBackground">?attr/colorSurface</item>
+        <item name="android:windowBackground">?android:colorBackground</item>
     </style>
 
     <style name="Theme.HyperDeck.Splash" parent="Theme.SplashScreen">
