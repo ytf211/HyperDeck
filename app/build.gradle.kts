@@ -5,6 +5,11 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val splitReleaseByAbi = providers.gradleProperty("splitReleaseByAbi")
+    .map(String::toBoolean)
+    .orElse(false)
+    .get()
+
 android {
     namespace = "com.hyperdeck"
     compileSdk = 36
@@ -22,8 +27,8 @@ android {
         applicationId = "com.hyperdeck"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.2.6"
+        versionCode = 8
+        versionName = "0.2.7"
     }
 
     buildTypes {
@@ -38,7 +43,8 @@ android {
         }
     }
 
-    // ABI splits only for release builds
+    // Release ABI behavior is controlled by the splitReleaseByAbi Gradle property.
+    // Debug builds stay single universal APK because workflow only passes the property for release builds.
     androidComponents {
         beforeVariants { variantBuilder ->
             if (variantBuilder.buildType == "release") {
@@ -49,10 +55,10 @@ android {
 
     splits {
         abi {
-            isEnable = true
+            isEnable = splitReleaseByAbi
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
-            isUniversalApk = true
+            isUniversalApk = !splitReleaseByAbi
         }
     }
 
